@@ -1,0 +1,165 @@
+**********************************************************************************
+*
+* Title:        LED Light Blinking
+*
+* Objective:    CSE472 Homework 2 sample program
+*                 (in-class-room demonstration) 
+*
+* Revision:     V1.0
+*
+* Date:         9/5/2015
+*
+* Programmer:   Quang Nguyen
+*
+* Company:      PSU CMPEN472
+*
+* Algorithm:    Simple parallel I/O in a nested delay-loop.
+*
+* Register use: 
+*               A: Light on/off state and Switch SW1 on/off state
+*
+*               X,Y: Delay loop counters
+*
+* Memory use:   RAM Locations from $3000 for data 
+*                                   $3100 for program
+*
+* Input:        Parameters hard coded in the program.
+*                Switch SW1 at PORTP bit 0
+*
+* Output:       LED 1,2,3,4 at PORTB bit 4,5,6,7
+*
+* Observation:  This is a program that blinks LEDs and blinking period can 
+*               be changed with the delay loop counter value
+*
+* Note:         N/A
+*
+* Comments:     This program is developed and simulated using Codewarrior development software
+*               and targeted for Axion Manufacturing's APS12C128 board (CSM-12C128)
+*               board running at 24MHz bus clock
+*
+***********************************************************************************************
+*
+* Parameter Declearation section
+*
+* Export Symbols
+                  XDEF          pgstart         ; export 'pgstart' symbol
+                  ABSENTRY      pgstart         ; FOR assembly entry point
+
+* Symbols and macros
+*
+PORTA             EQU         $0000             ; I/O port addresses (port A not used)
+DDRA              EQU         $0002             
+
+PORTB             EQU         $0001             ; Port B is connected with LEDs
+DDRB              EQU         $0003             
+PUCR              EQU         $000C             ; to enable pull0up mode for PORT A, B, E, K
+
+PTP               EQU         $0258             ; PORTP data register, used for push switches
+PTIP              EQU         $0259             ; PORTP input register <<===
+DDRP              EQU         $025A             ; PORTP data direction register
+PERP              EQU         $025C             ; PORTP pull up/down enable
+PPSP              EQU         $025D             ; PORTP pull up/down selection 
+
+***********************************************************
+* Data Section
+*
+                  ORG         $3000             ; reserve RAM memory starting addresses 
+                                                ; memory $3000 to $30FF are for data
+Counter1          DC.W        $4fff             ; initial X register counter number
+Counter2          DC.w        $0020             ; initial y register counter number
+FirstTimeFlag     DC.w        $0025             ; flag to indicate if this is the first time 
+                                                ; sw1 is pressed
+
+StackSP                                         ; remaining memory space for stack data
+                                                ; initial stack pointer position set
+                                                ; to $3100 (pgstart)
+
+*
+************************************************************
+* Program Section
+*
+                  org         $3100             ; Program start address, in RAM
+pgstart           lds         #pgstart          ; initialize the stack pointer
+                  
+                  ldaa        #%11110000        ; set PORTB bit 7,6,5,4,as output. 3,2,1,0 as input
+                  staa        DDRB              ; Led 1,2,3,4 on PORTB bit 0,1,2,3.
+                                                ;     DIP switch 1,2,3,4 on the bits 0,1,2,3.
+
+                  bclr        DDRP, %00000011   ; Push button switch 1 and 2 at PORTP bit 0 and 1
+                                                ;     set PORTP bit 0 and 1 as input
+                  bset        PERP, %00000011   ; enable the pull up/down feature at PORTP
+                  bclr        PPSP, %00000011   ; select pull up feature at PORTP bit 0 and 1 for 
+                                                ;     Push button switch 1 and 2.
+                  
+                  ldaa        #%11110000        ; turn off LED 1,2,3,4 at PORTB bit 4,5,6,7
+                  staa        PORTB             
+
+                  ldaa        #$00              ; initialize FirstTimeFlag
+                  staa        FirstTimeFlag
+
+mainLoop
+                  ldaa        PTIP              ; read push button SW1 at PORTP0
+                  anda        #%00000001        ; Check the bit 0 only
+                  beq         sw1notpushed         
+
+
+                  *******************************************************************
+                  *     if sw1 is pressed then the LED 1 - 4 will start turning ON with
+                  *     a 1 second delay in between
+                  *******************************************************************
+sw1pushed         
+                  ldaa        FirstTimeFlag           
+                  beq         setupPortBForShifting   ; if( FirstTimeFlag == 0), branch to setupPortBForShifting
+                  asl         PORTB                   ; Shift PORTB to the left
+                  bcc         setupPortBForShifting   ; if(No carry == True), branch to setupPortBForShifting
+                  jsr         delay1sec 
+                  bra         mainLoop
+
+setupPortBForShifting                                 
+                  ldaa        #$f0
+                  staa        PORTB                   ; Turn all LEDs off
+                  ldaa        #$01                    ; set the flag to indicate the PORTB is setup for shifting
+                  staa        FirstTimeFlag 
+                  jsr         delay1sec 
+                  bra         mainLoop
+
+
+                  *******************************************************************
+                  *     if sw1 is not pressed then LED 1 and 4 will alternately blink at
+                  *     a rate of 1 Hz
+                  *******************************************************************
+sw1notpushed      bclr        FirstTimeFlag, $01
+                  bset        PORTB, $10        ; turn OFF LED1 at PORTB4
+
+                  ; Alternately blink LED 0 and LED 4 at a rate of 1 Hz
+                  bset        PORTB,%10000000   ; turn off LED 4 at PORTB7
+                  bclr        PORTB,%00010000   ; turn on LED 0 at PORTB4
+                  jsr         delay1sec         ; wait for 1 second
+                  bclr        PORTB,%10000000   ; turn on LED 4 at PORTB7
+                  bset        PORTB,%00010000   ; turn on LED 0 at PORTB4
+                  jsr         delay1sec         ; wait for 1 second
+                  ; End of blinking sequence
+
+                  BRA         mainLoop          ; loop forever
+
+
+*************************************************************************
+*
+* Subroutine Section
+*
+
+; This delay Subroutine will delay the program by 1 second 
+delay1sec
+                  ldy         Counter2          ; long delay by
+dly1Loop          jsr         delayMS           ; Y * delayMS
+                  dey         
+                  bne         dly1Loop
+                  rts 
+
+delayMS
+                  ldx         Counter1          ; short delay
+dlyMSLoop         nop                           ; X * NOP
+                  dex
+                  bne         dlyMSLoop
+                  rts
+

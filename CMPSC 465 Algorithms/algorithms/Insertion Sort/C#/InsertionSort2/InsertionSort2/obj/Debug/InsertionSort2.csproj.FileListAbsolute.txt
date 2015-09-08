@@ -1,0 +1,1 @@
+C:\Users\quang\Dropbox\School\Penn State\Fall\CMPSC 465 Algorithms\algorithms\Insertion Sort\C#\InsertionSort2\InsertionSort2\bin\Debug\InsertionSort2.exe.config

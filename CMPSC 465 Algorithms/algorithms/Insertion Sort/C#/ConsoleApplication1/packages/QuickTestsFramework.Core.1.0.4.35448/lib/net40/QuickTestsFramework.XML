@@ -1,0 +1,96 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>QuickTestsFramework</name>
+    </assembly>
+    <members>
+        <member name="T:QuickTestsFramework.Internals.Catch">
+            <summary>
+            Catch and return exception or console, trace, debug output.
+            </summary>
+        </member>
+        <member name="F:QuickTestsFramework.Internals.Catch.TraceListenerName">
+            <summary>
+            Name of trace listener that was used during catching output. You may use this information to add some filter. But remember if any listener redirected output from console costom listener won't by add.
+            </summary>
+        </member>
+        <member name="F:QuickTestsFramework.Internals.Catch.CatchCanHandleTraceAndDebug">
+            <summary>
+            You can decide to disable caching output from Debug and Trace.
+            </summary>
+        </member>
+        <member name="M:QuickTestsFramework.Internals.Catch.ConsoleOutput(System.Action)">
+            <summary>
+            Catch and return Console output in region.
+            </summary>
+        </member>
+        <member name="M:QuickTestsFramework.Internals.Catch.Output(System.Action)">
+            <summary>
+            Catch and return console, trace, debug output in region. Depending on confuguration. See:
+            </summary>
+        </member>
+        <member name="M:QuickTestsFramework.Internals.Catch.Exception(System.Action)">
+            <summary>
+            Catch and return exception in region.
+            </summary>
+        </member>
+        <member name="T:QuickTestsFramework.Internals.SlowRunner">
+            <summary>
+            Umożliwia uruchamianie testów szybkich w sposób konwencjonalny, np. na potrzeby debugowania testów.
+            </summary>
+        </member>
+        <member name="M:QuickTestsFramework.Internals.SlowRunner.#ctor(System.Action)">
+            <summary>
+            Umożliwia uruchamianie testów szybkich w sposób konwencjonalny, np. na potrzeby debugowania testów.
+            </summary>
+        </member>
+        <member name="T:QuickTestsFramework.Runner">
+            <summary>
+            Klasa odpowiedzialna za uruchamianie testów.
+            </summary>
+        </member>
+        <member name="M:QuickTestsFramework.Runner.RunTestsInSlowMode(System.Action)">
+            <summary>
+            Metoda umożliwiająca wywołanie testów w trybie wolnym. Po każdym incjalizerze wywołana zostanie testowana akcja a następnie assercja. <br/>
+            Metoda służy jedynie debugowaniu testów. Uruchamianie testów jest wykonywane bez żadnej otoczki QuickTestsFrameworka.
+            </summary>
+            <param name="action">Testowana akcja.</param>
+        </member>
+        <member name="M:QuickTestsFramework.Runner.RunInitializers(System.Object)">
+            <summary>
+            Metoda odpowiedzialna za uruchomienie wszystkich (albo tylko wybranych) metod generujących przypadki testowe i metod inicujących dane.
+            </summary>
+            <param name="testFixtureInstance">Instancja klasy testu w którym uruchamiają się testy.</param>
+        </member>
+        <member name="M:QuickTestsFramework.Runner.Run(System.Action,System.Action)">
+            <summary>
+            Uruchamia podane delegaty w zależności to fazy uruchamiania testu.
+            </summary>
+            <param name="inicializer">Delegata uruchamiana z TestFixtureSetup. Odpowiedzialna za zebranie danych początkowych dla procesu.</param>
+            <param name="assertion">Delegata uruchamiana po zakończeniu procesu celem weryfikacji poprawności danych wujściowych.</param>
+        </member>
+        <member name="M:QuickTestsFramework.Runner.Run``1(System.Func{``0},System.Action{``0})">
+            <summary>
+            Uruchamia podane delegaty w zależności to fazy uruchamiania testu.
+            </summary>
+            <param name="inicializer">Delegata uruchamiana z TestFixtureSetup. Odpowiedzialna za zebranie danych początkowych dla procesu.</param>
+            <param name="assertion">Delegata uruchamiana po zakończeniu procesu celem weryfikacji poprawności danych wujściowych.</param>
+        </member>
+        <member name="M:QuickTestsFramework.Runner.Run``1(System.Func{System.Collections.Generic.IEnumerable{``0}},System.Action{``0},System.Action{``0})">
+            <summary>
+            Uruchamia podane delegaty w zależności to fazy uruchamiania testu.
+            </summary>
+            <param name="testCaseGenerator">Delegata odpowiedzialna za generowanie przypadków testowych. Przypadki są keszowane i są dostępne z parametru delegat inicializer oraz assertion</param>
+            <param name="inicializer">Delegata uruchamiana z TestFixtureSetup. Odpowiedzialna za zebranie danych początkowych dla procesu.</param>
+            <param name="assertion">Delegata uruchamiana po zakończeniu procesu celem weryfikacji poprawności danych wujściowych.</param>
+        </member>
+        <member name="M:QuickTestsFramework.Runner.Run``2(System.Func{System.Collections.Generic.IEnumerable{``0}},System.Func{``0,``1},System.Action{``1})">
+            <summary>
+            Uruchamia podane delegaty w zależności to fazy uruchamiania testu.
+            </summary>
+            <param name="testCaseGenerator">Delegata odpowiedzialna za generowanie przypadków testowych. Przypadki są keszowane i są dostępne z parametru delegat inicializer oraz assertion</param>
+            <param name="inicializer">Delegata uruchamiana z TestFixtureSetup. Odpowiedzialna za zebranie danych początkowych dla procesu.</param>
+            <param name="assertion">Delegata uruchamiana po zakończeniu procesu celem weryfikacji poprawności danych wujściowych.</param>
+        </member>
+    </members>
+</doc>
