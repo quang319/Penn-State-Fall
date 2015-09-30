@@ -1,30 +1,26 @@
 **********************************************************************************
 *
-* Title:        LED PWM
+* Title:        LED Transition
 *
-* Objective:    CSE472 Homework 3
+* Objective:    CSE472 Homework 4
 *
 * Revision:     V1.0
 *
-* Date:         9/15/2015
+* Date:         9/21/2015
 *
 * Programmer:   Quang Nguyen
 *
 * Company:      PSU CMPEN472
 *
-* Purpose:      To change the brightness of LED 2 based on the press of SW 1.
-*               At initialization: LED 3 is on and the rest are off
-*               SW1 not pressed: LED 2 = 21% duty cycle
-*               SW1 is pressed:  LED 2 = 12% duty cycle
+* Purpose:      To transition LED 1 from 0% to 100% in 5 seconds and vice versa
 *
 * Register use: 
 *               D,X,Y
 *
 * Memory use:   RAM Locations from $3000 for data 
-*                                   $3100 for program
+*                                  $3100 for program
 *
 * Input:        Parameters hard coded in the program.
-*                Switch SW1 at PORTP bit 0
 *
 * Output:       LED 1,2,3,4 at PORTB bit 4,5,6,7
 *
@@ -89,6 +85,7 @@ mainLoop
                   ******************** Transition LED from 100% to 0% *****************
                   ldaa        #$01
                   jsr         TransitionLED
+
                   BRA         mainLoop          ; loop forever
 
 
@@ -127,8 +124,8 @@ TransitionLED
                   psha                          ; push this into the sp
 
 TransitionLED_Dimming
-                  ldaa        sp                ; setting up the parameters for the SetTimePerPWM subroutine
-                  ldab        #$30              ; 5000 ms / 100 = 50
+                  ldab        sp                ; setting up the parameters for the SetTimePerPWM subroutine
+                  ldaa        #$32              ; 5000 ms / 100 = 50
                   jsr         SetTimePerPWM     ;
                   ldaa        sp                
                   deca                          ; Decreasing the % duty cycle (aka dimming the light)
@@ -142,15 +139,15 @@ TransitionLED_Brightening_Setup
                   psha                          ; push this into the sp
 
 TransitionLED_Brightening 
-                  ldaa        sp                ; setting up the parameters for the SetTimePerPWM subroutine
-                  ldab        #$30              ; 5000 ms / 100 = 50
+                  ldab        sp                ; setting up the parameters for the SetTimePerPWM subroutine
+                  ldaa        #$30              ; 5000 ms / 100 = 50
                   jsr         SetTimePerPWM     ;
                   ldaa        sp                
                   inca                          ; Increasing the % duty cycle
                   staa        sp                
-                  suba        #$64              ; subtract 100 from Reg10
-                  bls         TransitionLED_Brightening
-                                                ; continue until the % duty cycle > 100 
+                  cmpa        #$64              ; Check to see if it is at %100 duty cycle 
+                  bne         TransitionLED_Brightening
+                                                ; branch if it is 
 
 TransitionLED_End 
                   pula                          ; pop RegA from sp so that the program can return to the right place 
@@ -182,11 +179,11 @@ TransitionLED_End
 SetTimePerPWM 
                   pshd                          ; store RegD onto the sp 
 SetTimePerPWMLoop
-                  ldab        sp                ; load the duty cycle for the sub rt.
+                  ldab        1,sp                ; load the duty cycle for the sub rt.
                   jsr         SetPWMDutyCycle   ; Call the sub rt.
-                  ldaa        1,sp              ; Load the pwm period into RegA 
+                  ldaa        sp              ; Load the pwm period into RegA 
                   deca                          
-                  staa        1,sp              ; decrement and then store it back to the sp
+                  staa        sp              ; decrement and then store it back to the sp
                   bne         SetTimePerPWMLoop ; loop back if the pwm period != 0
                   puld                          ; pop the sp so that we can return to the right place
                   rts  
@@ -237,17 +234,22 @@ SetPWMDutyCycle
                   ldab        1,sp              ; load PwmOnCounter into RegB
                   clra                          ; clear RegA because the subroutine delay_MS
                                                 ; reads the whole entire D register 
+                  cba                           ; skip the delay if the LED is suppose to be off for 100% of the time
+                  beq         SetTimePerPWM_off
                   jsr         delay_10US        ; Keep LED 2 on for the duration of PwmOnCounter in mS 
 
                   *******************************************************
                   * Turn off LED 2 for the duration of the off duty cycle
                   *******************************************************
-
+SetTimePerPWM_off
                   bset        PORTB, $10        ; Turn off LED 1
                   ldab        sp                ; load pwmOffCounter into RegB
                   clra                          ; clear be for the same reason as above
+                  cba                           ; skip the delay if the LED is suppose to be on for 100% of the time
+                  beq         SetTimePerPWM_end
                   jsr         delay_10US
 
+SetTimePerPWM_end
                   pula                          ; Restore the content of the registers the way it originally was
                   pulb                          
                   rts                           ; We have completed a whole duty cycle (100 ms) we can return back

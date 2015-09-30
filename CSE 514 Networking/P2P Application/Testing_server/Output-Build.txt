@@ -1,0 +1,3 @@
+﻿1>------ Build started: Project: Testing_server, Configuration: Debug Any CPU ------
+1>  Testing_server -> C:\Users\quang\Dropbox\School\Penn State\Fall\CSE 514 Networking\P2P Application\Testing_server\Testing_server\bin\Debug\Testing_server.dll
+========== Build: 1 succeeded, 0 failed, 0 up-to-date, 0 skipped ==========
