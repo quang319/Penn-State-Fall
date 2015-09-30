@@ -117,7 +117,6 @@ mainLoop
 *
 * Subroutine Section
 *
-
 printmsg
                   pshd
                   pshy
