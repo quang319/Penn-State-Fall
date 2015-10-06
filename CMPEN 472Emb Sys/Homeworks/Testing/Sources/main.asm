@@ -114,16 +114,14 @@ pgstart           lds         #pgstart          ; initialize the stack pointer
                   staa        PORTB             
 
 mainLoop
-                  ldd         #$0002
-                  ldx         #$0031
-                  jsr         ConcatinateDnX
+                  ldd         #$1234
+                  jsr         CvrtBinToASCIIHex
 
 
 
 
 
                   BRA         mainLoop          ; loop forever
-
 
 ; Result = Regb(oneth place), RegX(Tenth place), RegY(Hundreth place)
 CvrtBinToASCIIDec
@@ -132,7 +130,7 @@ CvrtBinToASCIIDec
                   ldx         #100
                   idiv
                   pshb
-                  ldab        #30
+                  ldab        #$30
                   abx
                   pulb
                   pshx
@@ -140,14 +138,48 @@ CvrtBinToASCIIDec
                   ldx         #10
                   idiv
                   pshb
-                  ldab        #30
+                  ldab        #$30
                   abx
                   pulb
                   pshx
                   ; Get the value for the oneth place
-                  addb        #30
+                  addb        #$30
                   pulx
                   puly        
+                  rts 
+
+; Input: binary # in regB
+; Result = RegA(The larger hex), RegB(The smaller hex)
+CvrtBinToASCIIHex
+                  ; Get the value for the larger hex place
+                  clra         
+                  ldx         #16
+                  idiv  
+                  pshb                          ; Push B
+                  cpx         #10
+                  blo         CvrtBinToASCIIHex_1stHigher
+                  ldab        #7
+                  abx         
+CvrtBinToASCIIHex_1stHigher
+                  ldab        #$30
+                  abx
+                  pulb                          ; Pull B
+                  pshx                          ; Push X
+                  ; Get the value for the smaller place 
+                  cmpb        #10
+                  blo         CvrtBinToASCIIHex_2ndHigher
+                  addb        #7
+CvrtBinToASCIIHex_2ndHigher
+                  addb        #$30
+                  pshb                          ; Push B
+
+                  ; shuffle stuff around so that RegA has the larger half and RegB has the smallest half
+                   
+                  ldd         1,sp              ; Transfer the higher half onto RegD
+                  tba                           ; transfer B to A 
+                  pulb 
+                  pulx
+
                   rts 
 
 ; Input: Higher 2 bytes in RegX, Lower 2 bytes in RegD

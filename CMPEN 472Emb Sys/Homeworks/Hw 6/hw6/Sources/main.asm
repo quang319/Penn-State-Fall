@@ -256,7 +256,7 @@ OperateOnInput_L4Test
                   bne         OperateOnInput_F4Test
                         ;           Turn on LED4
                   bclr        PORTB,#$80
-                  bra         OperateOnInput_ResetAfterCR
+                  lbra         OperateOnInput_ResetAfterCR
                         ;     else if ((only 2 in queue) && Last 2 chars == 'F4')
 OperateOnInput_F4Test
                   ldd         x 
@@ -264,7 +264,7 @@ OperateOnInput_F4Test
                   bne         OperateOnInput_STest
                         ;           Turn off LED4
                   bset        PORTB,#$80
-                  bra         OperateOnInput_ResetAfterCR
+                  lbra         OperateOnInput_ResetAfterCR
 
                         ;     else if ( the 1st chars == 'S')
 
@@ -299,8 +299,36 @@ OperateOnInput_STest
 
                   ; At this point, regD contains the address that the user wants in binary
                   std         x 
-                  ldaa        0,x 
+                  ldab        0,x               ; Parameter: The binary # to be converted to ASCII hex
+                  pshb                          ; push B
+                  jsr         CvrtBinToASCIIHex
+                  ldy         #OutputQueue
+                  std         9,y 
 
+                  ; Need to add 3 spaces
+                  ldaa        #SPACE 
+                  staa        11,y 
+                  ldaa        #SPACE 
+                  staa        12,y 
+                  ldaa        #SPACE 
+                  staa        13,y 
+
+                  ; Need to convert the binary to decimal 
+                  pulb                          ; Pull B
+                  jsr         CvrtBinToASCIIDec
+                  pshb                          ; Oneth place
+                  pshx                          ; Tenth place
+                  pshy                          ; Hundreth place
+                  ; Load the Hundreth place onto the OutputQueue
+                  puld
+                  ldy         #OutputQueue
+                  stab        13,y 
+                  ; Load the Tenth Place 
+                  puld
+                  stab        14,y 
+                  ; Load the oneth place 
+                  pulb 
+                  stab        15,y 
 
 
                   
@@ -393,7 +421,7 @@ CvrtBinToASCIIDec
                   ldx         #100
                   idiv
                   pshb
-                  ldab        #30
+                  ldab        #$30
                   abx
                   pulb
                   pshx
@@ -401,12 +429,12 @@ CvrtBinToASCIIDec
                   ldx         #10
                   idiv
                   pshb
-                  ldab        #30
+                  ldab        #$30
                   abx
                   pulb
                   pshx
                   ; Get the value for the oneth place
-                  addb        #30
+                  addb        #$30
                   pulx
                   puly        
                   rts 
@@ -436,6 +464,40 @@ CvrtASCIIHexStringToBin
                   pulx
 
                   rts
+
+; Input: binary # in regB
+; Result = RegA(The larger hex), RegB(The smaller hex)
+CvrtBinToASCIIHex
+                  ; Get the value for the larger hex place
+                  clra         
+                  ldx         #16
+                  idiv
+                  pshb                          ; Push B
+                  cpx         #10
+                  blo         CvrtBinToASCIIHex_1stHigher
+                  ldab        #7
+                  abx         
+CvrtBinToASCIIHex_1stHigher
+                  ldab        #$30
+                  abx
+                  pulb                          ; Pull B
+                  pshx                          ; Push X
+                  ; Get the value for the smaller place 
+                  cmpb        #10
+                  blo         CvrtBinToASCIIHex_2ndHigher
+                  addb        #7
+CvrtBinToASCIIHex_2ndHigher
+                  addb        #$30
+                  pshb                          ; Push B
+
+                  ; shuffle stuff around so that RegA has the larger half and RegB has the smallest half
+                   
+                  ldd         1,sp              ; Transfer the higher half onto RegD
+                  tba                           ; transfer B to A 
+                  pulb 
+                  pulx
+
+                  rts 
 
 ; Value of ASCII hex to convert to is in RegA
 CvrtASCIIHexToBin
