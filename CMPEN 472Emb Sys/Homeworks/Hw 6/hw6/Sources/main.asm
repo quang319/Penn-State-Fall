@@ -129,6 +129,8 @@ loop
                   jsr         getchar           ; type writer - check the key board
                   cmpa        #$00              ;  if nothing typed, keep checking
                   beq         loop
+
+                  jsr         putchar           ; is displayed on the terminal window
                   jsr         OperateOnInput    ; This is where we perform the majority of the program
                   Bra         loop
 
@@ -222,7 +224,12 @@ OperateOnInput
                   ; At this point, RegA contains the newest character
                   ; If (RegA == CR)
                   cmpa        #13
-                  bne         OperateOnInput_NotEqualCR
+                  lbne         OperateOnInput_NotEqualCR
+
+                  ; Moving the cursor to the next line
+                  ldaa        #LF               ; cursor to next line
+                  jsr         putchar
+
                   ;     if (index is within range)
                   ldd         #MsgQueue
                   addd        #5                ; MsgQueue + 4 = out of range of Queue
@@ -233,13 +240,97 @@ OperateOnInput
                   ldd         MsgQueuePointer
                   subd        #MsgQueue
                   cpd         #2
-                  bne         OperateOnInput_QUITTest
+                  lbne         OperateOnInput_QUITTest
                   ldd         x 
                   cpd         #$4C32            ; Hex for 'L2'
                   bne         OperateOnInput_F2Test
                         ;           Turn on LED2
                   bclr        PORTB,#$20
+                  lbra         OperateOnInput_ResetAfterCR
+
+OperateOnInput_F2Test
+                        ;     else if ((only 2 in queue) && Last 2 chars == 'F2')
+                  ldd         x 
+                  cpd         #$4632            ; Hex for 'F2'
+                  bne         OperateOnInput_L4Test
+                        ;           Turn off LED2
+                  bset        PORTB,#$20
+                  lbra         OperateOnInput_ResetAfterCR
+
+OperateOnInput_NoValidInput 
+                  ldx         #MsgInvalidInput
+                  jsr         printmsg
+                  ldaa        #CR               ; move the cursor to beginning of the line
+                  jsr         putchar           ;   Cariage Return/Enter key
+                  ldaa        #LF               ; move the cursor to next line, Line Feed
+                  jsr         putchar
+                  lbra         OperateOnInput_ResetAfterCR
+                        ;
+                        ;     else if ((only 2 in queue) && Last 2 chars == 'L4')
+OperateOnInput_L4Test
+                  ldd         x 
+                  cpd         #$4C34            ; Hex for 'L4'
+                  bne         OperateOnInput_F4Test
+                        ;           Turn on LED4
+                  bclr        PORTB,#$80
                   bra         OperateOnInput_ResetAfterCR
+                        ;     else if ((only 2 in queue) && Last 2 chars == 'F4')
+OperateOnInput_F4Test
+                  ldd         x 
+                  cpd         #$4634            ; Hex for 'F4'
+                  bne         OperateOnInput_L1Test
+                        ;           Turn off LED4
+                  bset        PORTB,#$80
+                  bra         OperateOnInput_ResetAfterCR
+                        ;     else if ((only 2 in queue) && Last 2 chars == 'L1')
+
+OperateOnInput_L1Test
+                  ldd         x 
+                  cpd         #$4C31            ; Hex for 'L1'
+                  bne         OperateOnInput_F1Test
+                        ;           Transition to bright on LED1
+                  ldab        #40               ; Parameter: the # of millisecond per iteration
+                  ldaa        #$00              ; Parameter: Increasing brightness
+                  jsr         TransitionLED
+                  bclr        PORTB,$10
+                  lbra         OperateOnInput_ResetAfterCR
+                        ;     else if ((only 2 in queue) && Last 2 chars == 'F1')
+OperateOnInput_F1Test
+                  ldd         x 
+                  cpd         #$4631            ; Hex for 'F1'
+                  bne         OperateOnInput_QUITTest
+                        ;           Transition to dim on LED1
+                  ldab        #40               ; Parameter:s the # of millisecond per iteration
+                  ldaa        #$01              ; Parameter: decreasing brightness
+                  jsr         TransitionLED
+                  bset        PORTB,$10
+                  lbra         OperateOnInput_ResetAfterCR
+                        ;     else if (Last 2 chars == "QU")
+
+                        ;     else
+OperateOnInput_QUITTest
+                  ldd         x 
+                  cpd         #$5155            ; Hex for 'QU'
+                  lbne         OperateOnInput_NoValidInput
+                        ;           if (The previous 2 chars == "IT")
+                  ldd         2,x
+                  cpd         #$4954            ; Hex for 'IT'
+                  lbne         OperateOnInput_NoValidInput
+                        ;                 set the flag for the typewriter program
+                  ldaa        #$01
+                  staa        FlgTypeWrite
+                  lbra         OperateOnInput_ResetAfterCR
+
+OperateOnInput_ResetAfterCR                     ; clearing MsgQueue and MsgQueuePointer
+                  ldx         #MsgQueue
+                  ldaa        #$00
+                  staa        1,x+
+                  staa        1,x+
+                  staa        1,x+
+                  staa        1,x+
+                  ldd         #MsgQueue
+                  std         MsgQueuePointer 
+                  bra         OperateOnInput_EndOfSR
 
 OperateOnInput_NotEqualCR
                   ;     if (index is within range)
@@ -262,44 +353,8 @@ OperateOnInput_NotAChar
                   staa        x
                   inx 
                   stx         MsgQueuePointer
-                  bra         OperateOnInput_EndOfSR  
+                  lbra         OperateOnInput_EndOfSR  
                   ;     else 
-
-OperateOnInput_F2Test
-                        ;     else if ((only 2 in queue) && Last 2 chars == 'F2')
-                  ldd         x 
-                  cpd         #$4632            ; Hex for 'F2'
-                  bne         OperateOnInput_L4Test
-                        ;           Turn off LED2
-                  bset        PORTB,#$20
-                  bra         OperateOnInput_ResetAfterCR
-
-OperateOnInput_NoValidInput 
-                  ldx         #MsgInvalidInput
-                  jsr         printmsg
-                  ldaa        #CR               ; move the cursor to beginning of the line
-                  jsr         putchar           ;   Cariage Return/Enter key
-                  ldaa        #LF               ; move the cursor to next line, Line Feed
-                  jsr         putchar
-                  bra         OperateOnInput_ResetAfterCR
-                        ;
-                        ;     else if ((only 2 in queue) && Last 2 chars == 'L4')
-OperateOnInput_L4Test
-                  ldd         x 
-                  cpd         #$4C34            ; Hex for 'L4'
-                  bne         OperateOnInput_F4Test
-                        ;           Turn on LED4
-                  bclr        PORTB,#$80
-                  bra         OperateOnInput_ResetAfterCR
-                        ;     else if ((only 2 in queue) && Last 2 chars == 'F4')
-OperateOnInput_F4Test
-                  ldd         x 
-                  cpd         #$4634            ; Hex for 'F4'
-                  bne         OperateOnInput_L1Test
-                        ;           Turn off LED4
-                  bset        PORTB,#$80
-                  bra         OperateOnInput_ResetAfterCR
-                        ;     else if ((only 2 in queue) && Last 2 chars == 'L1')
 
 OperateOnInput_OutOfRange
                   ;           increament pointer and return
@@ -313,54 +368,9 @@ OperateOnInput_EndOfSR
                   pulx
                   rts
 
-OperateOnInput_QUITTest
-                  ldd         x 
-                  cpd         #$5155            ; Hex for 'QU'
-                  bne         OperateOnInput_NoValidInput
-                        ;           if (The previous 2 chars == "IT")
-                  ldd         2,x
-                  cpd         #$4954            ; Hex for 'IT'
-                  bne         OperateOnInput_NoValidInput
-                        ;                 set the flag for the typewriter program
-                  ldaa        #$01
-                  staa        FlgTypeWrite
-                  bra         OperateOnInput_ResetAfterCR
 
-OperateOnInput_ResetAfterCR                     ; clearing MsgQueue and MsgQueuePointer
-                  ldx         #MsgQueue
-                  ldaa        #$00
-                  staa        1,x+
-                  staa        1,x+
-                  staa        1,x+
-                  staa        1,x+
-                  ldd         #MsgQueue
-                  std         MsgQueuePointer 
-                  bra         OperateOnInput_EndOfSR
 
-OperateOnInput_L1Test
-                  ldd         x 
-                  cpd         #$4C31            ; Hex for 'L1'
-                  bne         OperateOnInput_F1Test
-                        ;           Transition to bright on LED1
-                  ldab        #40               ; Parameter: the # of millisecond per iteration
-                  ldaa        #$00              ; Parameter: Increasing brightness
-                  jsr         TransitionLED
-                  bclr        PORTB,$10
-                  bra         OperateOnInput_ResetAfterCR
-                        ;     else if ((only 2 in queue) && Last 2 chars == 'F1')
-OperateOnInput_F1Test
-                  ldd         x 
-                  cpd         #$4631            ; Hex for 'F1'
-                  bne         OperateOnInput_QUITTest
-                        ;           Transition to dim on LED1
-                  ldab        #40               ; Parameter:s the # of millisecond per iteration
-                  ldaa        #$01              ; Parameter: decreasing brightness
-                  jsr         TransitionLED
-                  bset        PORTB,$10
-                  bra         OperateOnInput_ResetAfterCR
-                        ;     else if (Last 2 chars == "QU")
 
-                        ;     else
 
 
 ;***********printmsg***************************
