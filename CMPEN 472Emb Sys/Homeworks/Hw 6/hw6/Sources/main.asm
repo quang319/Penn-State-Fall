@@ -59,6 +59,8 @@ PORTB             EQU         $0001             ; Port B is connected with LEDs
 DDRB              EQU         $0003             
 PUCR              EQU         $000C             ; to enable pull0up mode for PORT A, B, E, K
 
+SPACE             EQU         $20
+DOLLAR            EQU         $24
 NULL              EQU         $00
 CR                EQU         $0D 
 LF                EQU         $0A
@@ -82,8 +84,9 @@ RDRF              EQU         $20
 *
                   ORG         $3000             ; reserve RAM memory starting addresses 
                                                 ; memory $3000 to $30FF are for data
-MsgQueue          DC.B        $00,$00,$00,$00   ; Queue to store the user inputs
+MsgQueue          DC.B        $00,$00,$00,$00,$00,$00,$00,$00,$00   ; Queue to store the user inputs
 MsgQueuePointer   Dc.w        $0000             ; Pointer to keep track of where we are in the queue
+OutputQueue       Dc.b        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0   ; queue to store the output message 
 FlgTypeWrite      dc.b        $00               ; Flag for the typewriter program 
                                                 ; 0 = normal program , 1 = typewriter program
 MsgInvalidInput   DC.b        'Invalid Input. Please try again.',$00
@@ -230,17 +233,12 @@ OperateOnInput
                   ldaa        #LF               ; cursor to next line
                   jsr         putchar
 
-                  ;     if (index is within range)
-                  ldd         #MsgQueue
-                  addd        #5                ; MsgQueue + 4 = out of range of Queue
-                  subd        MsgQueuePointer
-                  beq         OperateOnInput_NoValidInput
                   ldx         #MsgQueue
                         ;     if ((only 2 in queue) && Last 2 chars == 'L2')
                   ldd         MsgQueuePointer
                   subd        #MsgQueue
                   cpd         #2
-                  lbne         OperateOnInput_QUITTest
+                  lbne        OperateOnInput_STest
                   ldd         x 
                   cpd         #$4C32            ; Hex for 'L2'
                   bne         OperateOnInput_F2Test
@@ -255,15 +253,6 @@ OperateOnInput_F2Test
                   bne         OperateOnInput_L4Test
                         ;           Turn off LED2
                   bset        PORTB,#$20
-                  lbra         OperateOnInput_ResetAfterCR
-
-OperateOnInput_NoValidInput 
-                  ldx         #MsgInvalidInput
-                  jsr         printmsg
-                  ldaa        #CR               ; move the cursor to beginning of the line
-                  jsr         putchar           ;   Cariage Return/Enter key
-                  ldaa        #LF               ; move the cursor to next line, Line Feed
-                  jsr         putchar
                   lbra         OperateOnInput_ResetAfterCR
                         ;
                         ;     else if ((only 2 in queue) && Last 2 chars == 'L4')
@@ -282,20 +271,27 @@ OperateOnInput_F4Test
                         ;           Turn off LED4
                   bset        PORTB,#$80
                   bra         OperateOnInput_ResetAfterCR
-                        ;     else if ((only 2 in queue) && Last 2 chars == 'L1')
 
-OperateOnInput_L1Test
-                  ldd         x 
-                  cpd         #$4C31            ; Hex for 'L1'
-                  bne         OperateOnInput_F1Test
-                        ;           Transition to bright on LED1
-                  ldab        #40               ; Parameter: the # of millisecond per iteration
-                  ldaa        #$00              ; Parameter: Increasing brightness
-                  jsr         TransitionLED
-                  bclr        PORTB,$10
+                        ;     else if ( the 1st chars == 'S')
+
+OperateOnInput_STest
+                  ldaa        x 
+                  cmpa        #$53              ; Hex for 'S'
+                  bne         OperateOnInput_WTest
+
+                  ldy         #OutputQueue
+                  ldaa        #DOLLAR           ; Write a $ to the OutputQueue
+
+                  ldy         #MsgQueue 
+                  ldx         1,y 
+                  ldd         3,y 
+
+                  
+
+
                   lbra         OperateOnInput_ResetAfterCR
                         ;     else if ((only 2 in queue) && Last 2 chars == 'F1')
-OperateOnInput_F1Test
+OperateOnInput_WTest
                   ldd         x 
                   cpd         #$4631            ; Hex for 'F1'
                   bne         OperateOnInput_QUITTest
@@ -356,6 +352,16 @@ OperateOnInput_NotAChar
                   lbra         OperateOnInput_EndOfSR  
                   ;     else 
 
+
+OperateOnInput_NoValidInput 
+                  ldx         #MsgInvalidInput
+                  jsr         printmsg
+                  ldaa        #CR               ; move the cursor to beginning of the line
+                  jsr         putchar           ;   Cariage Return/Enter key
+                  ldaa        #LF               ; move the cursor to next line, Line Feed
+                  jsr         putchar
+                  lbra         OperateOnInput_ResetAfterCR
+
 OperateOnInput_OutOfRange
                   ;           increament pointer and return
                   ldx         MsgQueuePointer
@@ -367,6 +373,109 @@ OperateOnInput_EndOfSR
                   puld
                   pulx
                   rts
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; Result = Regb(oneth place), RegX(Tenth place), RegY(Hundreth place)
+CvrtBinToASCIIDec
+                  ; Get the value for the Hundreth place
+                  clra         
+                  ldx         #100
+                  idiv
+                  pshb
+                  ldab        #30
+                  abx
+                  pulb
+                  pshx
+                  ; Get the value for the Tenth place 
+                  ldx         #10
+                  idiv
+                  pshb
+                  ldab        #30
+                  abx
+                  pulb
+                  pshx
+                  ; Get the value for the oneth place
+                  addb        #30
+                  pulx
+                  puly        
+                  rts 
+
+; Input: Higher 2 bytes in RegX, Lower 2 bytes in RegD
+CvrtASCIIHexStringToBin
+                  pshx
+                  pshd
+                  ; Convert the smallest byte to binary
+                  jsr CvrtASCIIHexToBin
+                  stab        1,sp
+                  ; Convert the 2nd smallest byte to binary
+                  ldab        sp 
+                  jsr CvrtASCIIHexToBin
+                  stab        sp 
+                  ; Convert the 2nd largest byte to binary
+                  ldab        3,sp 
+                  jsr CvrtASCIIHexToBin
+                  stab        3,sp 
+                  ; convert the largest byte to binary 
+                  ldab        2,sp
+                  jsr CvrtASCIIHexToBin
+                  stab        2,sp
+
+                  ; Pull the results from the stack
+                  puld
+                  pulx
+
+                  rts
+
+; Value of ASCII hex to convert to is in RegA
+CvrtASCIIHexToBin
+
+                  subb        #$30               ; Number representation of Hex starts at 30
+                  ; Check to see if the ASCII char is "A" or higher
+                  cmpb        #10               ; If hex is "A" then the value will be higher than 9
+                  bls         CvrtASCIIHexToBin_NotAbove9
+                  subb        #16                ; $30 = 48, and "A" = 65. 65 - 48 - 16 = 1
+                  addb        #9
+CvrtASCIIHexToBin_NotAbove9
+                  rts
+; This function returns the concatination of the X and the D registers in RegD
+; RegD should contain the lower half and RegX should contain the upper half
+ConcatinateDnX
+                  pshx
+                  pshd
+                  ; Combine RegA and RegB
+                  jsr         Concatinate2Hex
+                  staa        1,sp
+                  ldd         2,sp
+                  jsr         Concatinate2Hex
+                  staa        3,sp 
+                  tab        
+                  clra 
+                  lsld         
+                  lsld        
+                  lsld        
+                  lsld        
+                  lsld        
+                  lsld        
+                  lsld        
+                  lsld        
+                  addd        sp 
+                  ldx         4,sp+
+                  rts 
+
+; This function receive the upper nibble in RegA and lower nibble in RegB
+; It outputs the result in RegA                 
+Concatinate2Hex
+                  lsla 
+                  lsla
+                  lsla
+                  lsla      
+                  aba         
+                  rts
+
 
 
 

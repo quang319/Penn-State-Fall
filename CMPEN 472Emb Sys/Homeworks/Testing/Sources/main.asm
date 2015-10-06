@@ -113,8 +113,10 @@ pgstart           lds         #pgstart          ; initialize the stack pointer
                   staa        PORTB             
 
 mainLoop
-                  ldab        #212
-                  jsr         CvrtBinToDec
+                  ldd         #$0002
+                  ldx         #$0031
+                  jsr         ConcatinateDnX
+
 
 
 
@@ -122,17 +124,18 @@ mainLoop
                   BRA         mainLoop          ; loop forever
 
 
-; Result = RegA(oneth place), RegB(Tenth place), RegX(Hundreth place)
-CvrtBinToDec
-                  pshb
-                  clra        
+; Result = Regb(oneth place), RegX(Tenth place), RegY(Hundreth place)
+CvrtBinToASCIIDec
+                  ; Get the value for the Hundreth place
+                  clra         
                   ldx         #100
                   idiv
                   pshb
                   ldab        #30
                   abx
                   pulb
-                  pshx 
+                  pshx
+                  ; Get the value for the Tenth place 
                   ldx         #10
                   idiv
                   pshb
@@ -140,8 +143,80 @@ CvrtBinToDec
                   abx
                   pulb
                   pshx
+                  ; Get the value for the oneth place
                   addb        #30
                   pulx
                   puly        
                   rts 
 
+; Input: Higher 2 bytes in RegX, Lower 2 bytes in RegD
+CvrtASCIIHexStringToBin
+                  pshx
+                  pshd
+                  ; Convert the smallest byte to binary
+                  jsr CvrtASCIIHexToBin
+                  stab        1,sp
+                  ; Convert the 2nd smallest byte to binary
+                  ldab        sp 
+                  jsr CvrtASCIIHexToBin
+                  stab        sp 
+                  ; Convert the 2nd largest byte to binary
+                  ldab        3,sp 
+                  jsr CvrtASCIIHexToBin
+                  stab        3,sp 
+                  ; convert the largest byte to binary 
+                  ldab        2,sp
+                  jsr CvrtASCIIHexToBin
+                  stab        2,sp
+
+                  ; Pull the results from the stack
+                  puld
+                  pulx
+
+                  rts
+
+; Value of ASCII hex to convert to is in RegA
+CvrtASCIIHexToBin
+
+                  subb        #$30               ; Number representation of Hex starts at 30
+                  ; Check to see if the ASCII char is "A" or higher
+                  cmpb        #10               ; If hex is "A" then the value will be higher than 9
+                  bls         CvrtASCIIHexToBin_NotAbove9
+                  subb        #16                ; $30 = 48, and "A" = 65. 65 - 48 - 16 = 1
+                  addb        #9
+CvrtASCIIHexToBin_NotAbove9
+                  rts
+; This function returns the concatination of the X and the D registers in RegD
+; RegD should contain the lower half and RegX should contain the upper half
+ConcatinateDnX
+                  pshx
+                  pshd
+                  ; Combine RegA and RegB
+                  jsr         Concatinate2Hex
+                  staa        1,sp
+                  ldd         2,sp
+                  jsr         Concatinate2Hex
+                  staa        3,sp 
+                  tab        
+                  clra 
+                  lsld         
+                  lsld        
+                  lsld        
+                  lsld        
+                  lsld        
+                  lsld        
+                  lsld        
+                  lsld        
+                  addd        sp 
+                  ldx         4,sp+
+                  rts 
+
+; This function receive the upper nibble in RegA and lower nibble in RegB
+; It outputs the result in RegA                 
+Concatinate2Hex
+                  lsla 
+                  lsla
+                  lsla
+                  lsla      
+                  aba         
+                  rts
