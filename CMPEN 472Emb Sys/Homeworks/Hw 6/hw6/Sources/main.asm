@@ -59,6 +59,7 @@ PORTB             EQU         $0001             ; Port B is connected with LEDs
 DDRB              EQU         $0003             
 PUCR              EQU         $000C             ; to enable pull0up mode for PORT A, B, E, K
 
+EQUAL             EQU         $3D
 SPACE             EQU         $20
 DOLLAR            EQU         $24
 NULL              EQU         $00
@@ -87,6 +88,7 @@ RDRF              EQU         $20
 MsgQueue          DC.B        $00,$00,$00,$00,$00,$00,$00,$00,$00   ; Queue to store the user inputs
 MsgQueuePointer   Dc.w        $0000             ; Pointer to keep track of where we are in the queue
 OutputQueue       Dc.b        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0   ; queue to store the output message 
+OutputQueuePointer Dc.b       $00
 FlgTypeWrite      dc.b        $00               ; Flag for the typewriter program 
                                                 ; 0 = normal program , 1 = typewriter program
 MsgInvalidInput   DC.b        'Invalid Input. Please try again.',$00
@@ -111,14 +113,14 @@ pgstart           lds         #pgstart          ; initialize the stack pointer
                   staa        PORTB    
 
 
-                  ldx         #MsgIntro1        ; Print the introduction messages
-                  jsr         printmsg
+                  ;ldx         #MsgIntro1        ; Print the introduction messages
+                  ;jsr         printmsg
                   
-                  ldx         #MsgIntro2        
-                  jsr         printmsg
+                  ;ldx         #MsgIntro2        
+                  ;jsr         printmsg
 
-                  ldx         #MsgIntro3        
-                  jsr         printmsg
+                  ;ldx         #MsgIntro3        
+                  ;jsr         printmsg
 
                   ldd         #MsgQueue         ; initialize the MsgQueuePointer to the address of the MsgQueue
                   std         MsgQueuePointer
@@ -126,28 +128,20 @@ pgstart           lds         #pgstart          ; initialize the stack pointer
 
                   
 loop              
-                  brset       FlgTypeWrite,$01,TypeWriterLoop
-                                                ; if this flag is set then we should be perform the typewriter function only
-
-                  jsr         getchar           ; type writer - check the key board
-                  cmpa        #$00              ;  if nothing typed, keep checking
-                  beq         loop
-
-                  jsr         putchar           ; is displayed on the terminal window
-                  jsr         OperateOnInput    ; This is where we perform the majority of the program
-                  Bra         loop
-
-TypeWriterLoop
-                  jsr         getchar           ; type writer - check the key board
-                  cmpa        #$00              ;  if nothing typed, keep checking
-                  beq         TypeWriterLoop
-                                                ;  otherwise - what is typed on key board
-                  jsr         putchar           ; is displayed on the terminal window
-                  cmpa        #CR
-                  bne         TypeWriterLoop            ; if Enter/Return key is pressed, move the
-                  ldaa        #LF               ; cursor to next line
-                  jsr         putchar
-                  bra         TypeWriterLoop
+                  ldaa        #'S'
+                  jsr         OperateOnInput
+                  ldaa        #'3'
+                  jsr         OperateOnInput
+                  ldaa        #'0'
+                  jsr         OperateOnInput
+                  ldaa        #'0'
+                  jsr         OperateOnInput
+                  ldaa        #'1'
+                  jsr         OperateOnInput
+                  ldaa        #CR
+                  jsr         OperateOnInput
+                  
+                  bra         loop
 
 
 *************************************************************************
@@ -267,7 +261,7 @@ OperateOnInput_L4Test
 OperateOnInput_F4Test
                   ldd         x 
                   cpd         #$4634            ; Hex for 'F4'
-                  bne         OperateOnInput_L1Test
+                  bne         OperateOnInput_STest
                         ;           Turn off LED4
                   bset        PORTB,#$80
                   bra         OperateOnInput_ResetAfterCR
@@ -279,12 +273,35 @@ OperateOnInput_STest
                   cmpa        #$53              ; Hex for 'S'
                   bne         OperateOnInput_WTest
 
+                  ; Ensuring that the OutputQueue = "$XXXX = $"
                   ldy         #OutputQueue
                   ldaa        #DOLLAR           ; Write a $ to the OutputQueue
+                  staa        y
+                  ldd         1,x               ; Write the ascii address of the input back on the screen
+                  std         1,y
+                  ldd         3,x   
+                  std         3,y     
+                  ldaa        #SPACE 
+                  staa        5,y 
+                  ldaa        #EQUAL 
+                  staa        6,y
+                  ldaa        #SPACE 
+                  staa        7,y 
+                  ldaa        #DOLLAR 
+                  staa        8,y 
 
+                  ; Now we need to add the output messages
                   ldy         #MsgQueue 
-                  ldx         1,y 
-                  ldd         3,y 
+                  ldx         1,y               ; Parameter: The larger half needs to go on RegX
+                  ldd         3,y               ; Parameter: the smaller half needs to go on regD
+                  jsr         CvrtASCIIHexStringToBin
+                  jsr         ConcatinateDnX
+
+                  ; At this point, regD contains the address that the user wants in binary
+                  std         x 
+                  ldaa        0,x 
+
+
 
                   
 
@@ -329,11 +346,7 @@ OperateOnInput_ResetAfterCR                     ; clearing MsgQueue and MsgQueue
                   bra         OperateOnInput_EndOfSR
 
 OperateOnInput_NotEqualCR
-                  ;     if (index is within range)
-                  ldd         #MsgQueue
-                  addd        #4                ; MsgQueue + 4 = out of range of Queue
-                  subd        MsgQueuePointer
-                  beq         OperateOnInput_OutOfRange
+
                         ;     if (RegA > 96)                // Checking if it a lowercase
                   ldaa        sp
                   cmpa        #96
@@ -361,12 +374,6 @@ OperateOnInput_NoValidInput
                   ldaa        #LF               ; move the cursor to next line, Line Feed
                   jsr         putchar
                   lbra         OperateOnInput_ResetAfterCR
-
-OperateOnInput_OutOfRange
-                  ;           increament pointer and return
-                  ldx         MsgQueuePointer
-                  inx   
-                  stx         MsgQueuePointer
                   
                   ; return from subroutine   
 OperateOnInput_EndOfSR  

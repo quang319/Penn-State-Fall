@@ -61,7 +61,8 @@ DDRP              EQU         $025A             ; PORTP data direction register
 PERP              EQU         $025C             ; PORTP pull up/down enable
 PPSP              EQU         $025D             ; PORTP pull up/down selection 
 
-
+SPACE             EQU         $20
+DOLLAR            EQU         $24
 NULL              EQU         $00
 CR                EQU         $0D 
 LF                EQU         $0A
