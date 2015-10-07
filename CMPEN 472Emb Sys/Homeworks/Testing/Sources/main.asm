@@ -114,14 +114,49 @@ pgstart           lds         #pgstart          ; initialize the stack pointer
                   staa        PORTB             
 
 mainLoop
-                  ldd         #$1234
-                  jsr         CvrtBinToASCIIHex
+                  ldx         #$3130
+                  ldab        #$36
+                  jsr         CvrtASCIIDecStringToBin
 
 
 
 
 
                   BRA         mainLoop          ; loop forever
+
+
+
+; Inputs: Top 2 block in RegX and the last block in RegB
+CvrtASCIIDecStringToBin
+
+                  pshx
+
+                  ; Convert the smallest block to binary
+                  subb        #$30
+                  pshb                          ; push B
+
+                  ; Convert the second smallest block to binary
+                  ; Multiply the result by 10 because is it the tenth place
+                  ldab        2,sp 
+                  subb        #$30
+                  ldaa        #10
+                  mul
+                  pshb                          ; The lower part of the Multiply is in RegB
+
+                  ; Convert the largest block to binary
+                  ; Multiply the result by 100 because it is the Hundreth place 
+                  ldab        2,sp 
+                  subb        #$30
+                  ldaa        #100
+                  mul
+
+                  ; Now we just need to add all the results together
+                  addb        sp
+                  addb        1,sp
+
+                  ldaa        4,sp+
+
+                  rts
 
 ; Result = Regb(oneth place), RegX(Tenth place), RegY(Hundreth place)
 CvrtBinToASCIIDec

@@ -85,6 +85,8 @@ RDRF              EQU         $20
 *
                   ORG         $3000             ; reserve RAM memory starting addresses 
                                                 ; memory $3000 to $30FF are for data
+testing           dc.b        14
+
 MsgQueue          DC.B        $00,$00,$00,$00,$00,$00,$00,$00,$00   ; Queue to store the user inputs
 MsgQueuePointer   Dc.w        $0000             ; Pointer to keep track of where we are in the queue
 OutputQueue       Dc.b        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0   ; queue to store the output message 
@@ -128,7 +130,7 @@ pgstart           lds         #pgstart          ; initialize the stack pointer
 
                   
 loop              
-                  ldaa        #'S'
+                  ldaa        #'W'
                   jsr         OperateOnInput
                   ldaa        #'3'
                   jsr         OperateOnInput
@@ -136,7 +138,15 @@ loop
                   jsr         OperateOnInput
                   ldaa        #'0'
                   jsr         OperateOnInput
-                  ldaa        #'1'
+                  ldaa        #'0'
+                  jsr         OperateOnInput
+                  ldaa        #' '
+                  jsr         OperateOnInput
+                  ldaa        #'$'
+                  jsr         OperateOnInput
+                  ldaa        #'6'
+                  jsr         OperateOnInput
+                  ldaa        #'a'
                   jsr         OperateOnInput
                   ldaa        #CR
                   jsr         OperateOnInput
@@ -225,7 +235,20 @@ OperateOnInput
 
                   ; Moving the cursor to the next line
                   ldaa        #LF               ; cursor to next line
-                  jsr         putchar
+                  
+
+
+
+
+                  ;jsr         putchar
+
+
+
+
+
+
+
+
 
                   ldx         #MsgQueue
                         ;     if ((only 2 in queue) && Last 2 chars == 'L2')
@@ -298,7 +321,7 @@ OperateOnInput_STest
                   jsr         ConcatinateDnX
 
                   ; At this point, regD contains the address that the user wants in binary
-                  std         x 
+                  tfr         d,x 
                   ldab        0,x               ; Parameter: The binary # to be converted to ASCII hex
                   pshb                          ; push B
                   jsr         CvrtBinToASCIIHex
@@ -333,18 +356,101 @@ OperateOnInput_STest
 
                   
 
-
+                  jsr         ClearOutputQueue
                   lbra         OperateOnInput_ResetAfterCR
                         ;     else if ((only 2 in queue) && Last 2 chars == 'F1')
 OperateOnInput_WTest
-                  ldd         x 
-                  cpd         #$4631            ; Hex for 'F1'
+                  ldaa        x 
+                  cmpa        #'W'              ; Hex for 'W'
                   bne         OperateOnInput_QUITTest
-                        ;           Transition to dim on LED1
-                  ldab        #40               ; Parameter:s the # of millisecond per iteration
-                  ldaa        #$01              ; Parameter: decreasing brightness
-                  jsr         TransitionLED
-                  bset        PORTB,$10
+
+                  ; Ensuring that the OutputQueue = "$XXXX = $"
+                  ldy         #OutputQueue
+                  ldaa        #DOLLAR           ; Write a $ to the OutputQueue
+                  staa        y
+                  ldd         1,x               ; Write the ascii address of the input back on the screen
+                  std         1,y
+                  ldd         3,x   
+                  std         3,y     
+                  ldaa        #SPACE 
+                  staa        5,y 
+                  ldaa        #EQUAL 
+                  staa        6,y
+                  ldaa        #SPACE 
+                  staa        7,y 
+                  ldaa        #DOLLAR 
+                  staa        8,y 
+
+                  ; Now we need to add the output messages
+                  ldy         #MsgQueue 
+                  ldx         1,y               ; Parameter: The larger half needs to go on RegX
+                  ldd         3,y               ; Parameter: the smaller half needs to go on regD
+                  jsr         CvrtASCIIHexStringToBin
+                  jsr         ConcatinateDnX
+
+                  pshd                          ; Push this address as we will need again later on
+
+
+                  ; check if the 7th charcter is $ or not
+                  ldy         #MsgQueue 
+                  ldab        6,y 
+                  cmpb        #DOLLAR
+                  bne         OperateOnInput_WTest_Decimal
+
+                  ; Now we know that the input value is hex, we need to conver this to binary
+                  ldd         7,y
+                  ldx         #0 
+                  jsr         CvrtASCIIHexStringToBin
+                  jsr         ConcatinateDnX
+                  pshb               
+                  bra         OperateOnInput_WTest_Combine
+
+
+OperateOnInput_WTest_Decimal
+                  ; Now we know that the input value is decimal, we need to conver this to binary
+                  ldy         #MsgQueue
+                  ldx         6,y                     ; Parameter: the larger 2 blocks
+                  ldab        8,y                     ; Parameter: The last block
+                  jsr         CvrtASCIIDecStringToBin
+                  pshb               
+
+
+OperateOnInput_WTest_Combine
+                  ; At this point, the address of the user's input is stored in 1,sp 
+                  ; and the value for the address is stored in sp 
+
+                  ; Store value of the user input in the destination that he/she had specifes 
+                  ldx         1,sp 
+                  stab        0,x 
+
+                  ; Convert the binary value of the user input into ascii hex
+                  jsr         CvrtBinToASCIIHex
+                  ldy         #OutputQueue
+                  std         9,y
+
+                  ; Convert the binary value of the user input into decimal 
+                  pulb                          ; Pull B
+                  jsr         CvrtBinToASCIIDec
+                  pshb                          ; Oneth place
+                  pshx                          ; Tenth place
+                  pshy                          ; Hundreth place
+                  ; Load the Hundreth place onto the OutputQueue
+                  puld
+                  ldy         #OutputQueue
+                  stab        13,y 
+                  ; Load the Tenth Place 
+                  puld
+                  stab        14,y 
+                  ; Load the oneth place 
+                  pulb 
+                  stab        15,y 
+
+                  pulx
+
+                  jsr         ClearOutputQueue
+
+
+
                   lbra         OperateOnInput_ResetAfterCR
                         ;     else if (Last 2 chars == "QU")
 
@@ -365,6 +471,11 @@ OperateOnInput_QUITTest
 OperateOnInput_ResetAfterCR                     ; clearing MsgQueue and MsgQueuePointer
                   ldx         #MsgQueue
                   ldaa        #$00
+                  staa        1,x+
+                  staa        1,x+
+                  staa        1,x+
+                  staa        1,x+
+                  staa        1,x+
                   staa        1,x+
                   staa        1,x+
                   staa        1,x+
@@ -411,8 +522,66 @@ OperateOnInput_EndOfSR
 
 
 
+; This subroutine is used to clear the OutputQueue
+ClearOutputQueue
+                  pshx
+                  psha
+                  ldx         #OutputQueue
+                  ldaa        #$00
+                  staa        1,x+
+                  staa        1,x+
+                  staa        1,x+
+                  staa        1,x+
+                  staa        1,x+
+                  staa        1,x+
+                  staa        1,x+
+                  staa        1,x+
+                  staa        1,x+
+                  staa        1,x+
+                  staa        1,x+
+                  staa        1,x+
+                  staa        1,x+
+                  staa        1,x+
+                  staa        1,x+
+                  staa        1,x+
+                  pula
+                  pulx
+                  rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; Inputs: Top 2 block in RegX and the last block in RegB
+; Output: The binary representation on RegB
+CvrtASCIIDecStringToBin
+
+                  pshx
+
+                  ; Convert the smallest block to binary
+                  subb        #$30
+                  pshb                          ; push B
+
+                  ; Convert the second smallest block to binary
+                  ; Multiply the result by 10 because is it the tenth place
+                  ldab        2,sp 
+                  subb        #$30
+                  ldaa        #10
+                  mul
+                  pshb                          ; The lower part of the Multiply is in RegB
+
+                  ; Convert the largest block to binary
+                  ; Multiply the result by 100 because it is the Hundreth place 
+                  ldab        2,sp 
+                  subb        #$30
+                  ldaa        #100
+                  mul
+
+                  ; Now we just need to add all the results together
+                  addb        sp
+                  addb        1,sp
+
+                  ldaa        4,sp+
+
+                  rts
 
 ; Result = Regb(oneth place), RegX(Tenth place), RegY(Hundreth place)
 CvrtBinToASCIIDec
