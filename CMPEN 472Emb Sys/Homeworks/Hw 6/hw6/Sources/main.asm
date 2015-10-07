@@ -17,8 +17,10 @@
 *                       - F1 = Fade LED1 to 0%
 *                       - L2 = Turn on LED2
 *                       - F2 = Turn off LED2
-*                       - L4 = Turn on LED4
-*                       - F4 = Turn off LED4
+*                       - S####
+*                             Read an address from the controller. (Note: the address needs to be in Hex)
+*                       - W#### ###
+*                             Write a value to an address. Value to be writen to the controller can be Hex or Decimal. If hex, user must add a $ in front of the number
 *                       - QUIT = this will allow the user to enter the typewriter program
 *                       - Any other inputs are Invalid
 *                       * Note: uppercase and lowercase does not matter
@@ -169,12 +171,12 @@ TypeWriterLoop
 *
 * Fuction:        this subroutine takes in the user's input in RegA and output the proper result
 *                 Below are the possible inputs from the user
-*                       - L1 = Fade LED1 to 100%
-*                       - F1 = Fade LED1 to 0%
 *                       - L2 = Turn on LED2
 *                       - F2 = Turn off LED2
 *                       - L4 = Turn on LED4
 *                       - F4 = Turn off LED4
+*                       - S#### = Read from a register
+*                       - W#### ### = Write to a register
 *                       - QUIT = this will set the FlgTypeWrite variable
 *                       - Any other inputs are Invalid
 *                       * Note: uppercase and lowercase does not matter                       
@@ -184,48 +186,6 @@ TypeWriterLoop
 *
 * Registers Used: - RegD and RegX
 *
-* Algorithm:      The subroutine follows the c code below 
-*
-                  ; If (RegA == CR)
-                  ;     if (index is within range)
-                        ;     if (Last 2 chars == 'L2')
-                        ;           Turn on LED2
-                        ;     else if (Last 2 chars == 'F2')
-                        ;           Turn off LED2
-                        ;
-                        ;     else if (Last 2 chars == 'L4')
-                        ;           Turn on LED4
-                        ;     else if (Last 2 chars == 'F4')
-                        ;           Turn off LED4
-                        ;
-                        ;     else if (Last 2 chars == 'L1')
-                        ;           Transition to bright on LED1
-                        ;     else if (Last 2 chars == 'F1')
-                        ;           Transition to dim on LED1
-                        ;
-                        ;     else if (Last 2 chars == "QU")
-                        ;           if (The previous 2 chars == "IT")
-                        ;                 set the flag for the typewriter program
-                        ;     else 
-                        ;           notifiy the user it was an invalid input
-                  ;     else
-                  ;           Tell the user it was an invalid input
-                  ;     Clear MsgQueue so that we get a clean read next time
-                  ; 
-                  ; else 
-                  ;     if (index is within range)
-                        ;     if (RegA > 96)                // Checking if it a lowercase
-                        ;           if (RegA < 123)
-                        ;                 RegA = RegA - 32  // Converting to uppercase
-                  ;           store RegA and increment pointer
-                  ;     else 
-                  ;           increment pointer
-                  ; 
-                  ; return from subroutine 
-*
-* Comments:       Due to 7 bits limitation of the PC relative addressing, some of the blocks of code were moved
-*                 around so that the program can actually branch to it. I appologize if this makes it slightly less
-*                 readable as stuff are now located in seemingly random order. 
 *
 *************************************************************************
 OperateOnInput
@@ -1063,8 +1023,8 @@ delay_10US_LOOP
 ; of the RAM.  RAM ends at $3FFF
 ; in MC9S12C128 chip
 
-MsgIntro1         dc.b        'Welcome! The followings are the commands for the program',CR,LF,'L1 = Fade LED1 up,  F1 = Fade LED1 down,  L2 = LED2 ON',CR,LF,NULL
-MsgIntro2         dc.b        'F2 = LED2 OFF, L4 = LED4 ON,  F4 = LED4 OFF',CR,LF,NULL
+MsgIntro1         dc.b        'Welcome! The followings are the commands for the program',CR,LF,'L2 = LED2 ON, F2 = LED2 OFF, L4 = LED4 ON,  F4 = LED4 OFF',CR,LF,NULL
+MsgIntro2         dc.b        'S#### to read to a register and W#### ### to write to a register ',CR,LF,NULL
 MsgIntro3         dc.b        'QUIT = enable the program to enter typewriter mode.',CR,LF,NULL
 
                   END               ; this is end of assembly source file
