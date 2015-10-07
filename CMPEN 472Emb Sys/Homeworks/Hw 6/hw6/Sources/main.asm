@@ -89,7 +89,7 @@ testing           dc.b        14
 
 MsgQueue          DC.B        $00,$00,$00,$00,$00,$00,$00,$00,$00   ; Queue to store the user inputs
 MsgQueuePointer   Dc.w        $0000             ; Pointer to keep track of where we are in the queue
-OutputQueue       Dc.b        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0   ; queue to store the output message 
+OutputQueue       Dc.b        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0   ; queue to store the output message 
 OutputQueuePointer Dc.b       $00
 FlgTypeWrite      dc.b        $00               ; Flag for the typewriter program 
                                                 ; 0 = normal program , 1 = typewriter program
@@ -115,43 +115,46 @@ pgstart           lds         #pgstart          ; initialize the stack pointer
                   staa        PORTB    
 
 
-                  ;ldx         #MsgIntro1        ; Print the introduction messages
-                  ;jsr         printmsg
+                  ldx         #MsgIntro1        ; Print the introduction messages
+                  jsr         printmsg
                   
-                  ;ldx         #MsgIntro2        
-                  ;jsr         printmsg
+                  ldx         #MsgIntro2        
+                  jsr         printmsg
 
-                  ;ldx         #MsgIntro3        
-                  ;jsr         printmsg
+                  ldx         #MsgIntro3        
+                  jsr         printmsg
 
                   ldd         #MsgQueue         ; initialize the MsgQueuePointer to the address of the MsgQueue
                   std         MsgQueuePointer
 
 
                   
-loop              
-                  ldaa        #'W'
-                  jsr         OperateOnInput
-                  ldaa        #'3'
-                  jsr         OperateOnInput
-                  ldaa        #'0'
-                  jsr         OperateOnInput
-                  ldaa        #'0'
-                  jsr         OperateOnInput
-                  ldaa        #'0'
-                  jsr         OperateOnInput
-                  ldaa        #' '
-                  jsr         OperateOnInput
-                  ldaa        #'$'
-                  jsr         OperateOnInput
-                  ldaa        #'6'
-                  jsr         OperateOnInput
-                  ldaa        #'a'
-                  jsr         OperateOnInput
-                  ldaa        #CR
-                  jsr         OperateOnInput
-                  
-                  bra         loop
+loop 
+
+
+                  brset       FlgTypeWrite,$01,TypeWriterLoop
+                                                ; if this flag is set then we should be perform the typewriter function only
+
+                  jsr         getchar           ; type writer - check the key board
+                  cmpa        #$00              ;  if nothing typed, keep checking
+                  beq         loop
+
+                  jsr         putchar           ; is displayed on the terminal window
+                  jsr         OperateOnInput    ; This is where we perform the majority of the program
+                  Bra         loop
+
+TypeWriterLoop
+                  jsr         getchar           ; type writer - check the key board
+                  cmpa        #$00              ;  if nothing typed, keep checking
+                  beq         TypeWriterLoop
+                                                ;  otherwise - what is typed on key board
+                  jsr         putchar           ; is displayed on the terminal window
+                  cmpa        #CR
+                  bne         TypeWriterLoop            ; if Enter/Return key is pressed, move the
+                  ldaa        #LF               ; cursor to next line
+                  jsr         putchar
+
+                  bra         TypeWriterLoop
 
 
 *************************************************************************
@@ -237,17 +240,7 @@ OperateOnInput
                   ldaa        #LF               ; cursor to next line
                   
 
-
-
-
-                  ;jsr         putchar
-
-
-
-
-
-
-
+                  jsr         putchar
 
 
                   ldx         #MsgQueue
@@ -345,16 +338,21 @@ OperateOnInput_STest
                   ; Load the Hundreth place onto the OutputQueue
                   puld
                   ldy         #OutputQueue
-                  stab        13,y 
+                  stab        14,y 
                   ; Load the Tenth Place 
                   puld
-                  stab        14,y 
+                  stab        15,y 
                   ; Load the oneth place 
                   pulb 
-                  stab        15,y 
+                  stab        16,y 
 
 
-                  
+                  ldx         #OutputQueue       ; print the output message
+                  jsr         printmsg
+                  ldaa        #CR               ; cursor to next line
+                  jsr         putchar
+                  ldaa        #LF               ; cursor to next line
+                  jsr         putchar
 
                   jsr         ClearOutputQueue
                   lbra         OperateOnInput_ResetAfterCR
@@ -362,7 +360,7 @@ OperateOnInput_STest
 OperateOnInput_WTest
                   ldaa        x 
                   cmpa        #'W'              ; Hex for 'W'
-                  bne         OperateOnInput_QUITTest
+                  lbne         OperateOnInput_QUITTest
 
                   ; Ensuring that the OutputQueue = "$XXXX = $"
                   ldy         #OutputQueue
@@ -391,14 +389,26 @@ OperateOnInput_WTest
                   pshd                          ; Push this address as we will need again later on
 
 
-                  ; check if the 7th charcter is $ or not
+                   ; check if the 7th charcter is $ or not
                   ldy         #MsgQueue 
                   ldab        6,y 
                   cmpb        #DOLLAR
                   bne         OperateOnInput_WTest_Decimal
 
+OperateOnInput_WTest_Hex
                   ; Now we know that the input value is hex, we need to conver this to binary
+                  ; Test if only one digit was supplied
+                  ldab        8,y               
+                  cmpb        #0
+                  bne         OperateOnInput_WTest_Hex_Second
+                  ldaa        #$30
+                  ldab        7,y
+                  bra         OperateOnInput_WTest_Hex_Combine
+
+OperateOnInput_WTest_Hex_Second
                   ldd         7,y
+
+OperateOnInput_WTest_Hex_Combine
                   ldx         #0 
                   jsr         CvrtASCIIHexStringToBin
                   jsr         ConcatinateDnX
@@ -409,8 +419,35 @@ OperateOnInput_WTest
 OperateOnInput_WTest_Decimal
                   ; Now we know that the input value is decimal, we need to conver this to binary
                   ldy         #MsgQueue
+
+                  ; Test if only one digit was supplied
+                  ldab         7,y               
+                  cmpb        #0
+                  bne         OperateOnInput_WTest_Decimal_hundred
+                  ldx         #$3030
+                  ldab        6,y
+                  bra         OperateOnInput_WTest_Decimal_Combine
+
+                  ; Test if only two digit was supplied
+OperateOnInput_WTest_Decimal_hundred
+                  ldab         8,y               
+                  cmpb        #0
+                  bne         OperateOnInput_WTest_Decimal_AllDigits
+                  ldab        6,y 
+                  ldaa        #$30
+                  tfr         d,x
+                  ldab        7,y
+                  bra         OperateOnInput_WTest_Decimal_Combine
+
+                  ; All blocks are valid so load everything
+OperateOnInput_WTest_Decimal_AllDigits
+
                   ldx         6,y                     ; Parameter: the larger 2 blocks
                   ldab        8,y                     ; Parameter: The last block
+                  jsr         OperateOnInput_WTest_Decimal_Combine
+
+OperateOnInput_WTest_Decimal_Combine
+
                   jsr         CvrtASCIIDecStringToBin
                   pshb               
 
@@ -434,18 +471,34 @@ OperateOnInput_WTest_Combine
                   pshb                          ; Oneth place
                   pshx                          ; Tenth place
                   pshy                          ; Hundreth place
+
                   ; Load the Hundreth place onto the OutputQueue
-                  puld
                   ldy         #OutputQueue
-                  stab        13,y 
-                  ; Load the Tenth Place 
+                  ldaa        #SPACE 
+                  staa        11,y 
+                  ldaa        #SPACE 
+                  staa        12,y
+                  ldaa        #SPACE 
+                  staa        13,y 
+
                   puld
                   stab        14,y 
+                  ; Load the Tenth Place 
+                  puld
+                  stab        15,y 
                   ; Load the oneth place 
                   pulb 
-                  stab        15,y 
+                  stab        16,y 
 
                   pulx
+
+
+                  ldx         #OutputQueue       ; print the output message
+                  jsr         printmsg
+                  ldaa        #CR               ; cursor to next line
+                  jsr         putchar
+                  ldaa        #LF               ; cursor to next line
+                  jsr         putchar
 
                   jsr         ClearOutputQueue
 
@@ -528,6 +581,7 @@ ClearOutputQueue
                   psha
                   ldx         #OutputQueue
                   ldaa        #$00
+                  staa        1,x+
                   staa        1,x+
                   staa        1,x+
                   staa        1,x+
@@ -966,7 +1020,7 @@ SetTimePerPWM_end
 *                 - RegX - For the delay for the delay_10US_LOOP
 *
 * Example:        *The code below will delay the program by 100 uS
-*                 ldd        #$000A
+*                 ldd        #$0000
 *                 jsr         delay_10US
 *
 * Comments:       This Subroutine does not use interupts for the delay. It uses
