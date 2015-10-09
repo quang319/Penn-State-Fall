@@ -10,41 +10,44 @@ def mwis (n, weights):
     opt = []
     sol_items = []
     tot_weight = 0
+
     # Check if base case is less than zero, set the base case to zero if it is.
-    opt.append(0)
-    opt.append(0)
-    sol_items.append(0)
-    sol_items.append(2)
+    opt.append(weights[0])
+    opt.append(max(opt[0],weights[1]))
 
     for j in range(2,n):
+        opt.append(max (weights[j] + opt[j-2] , opt[j-1]) )
 
-        # If the inclusive
-        if (weights[j] + opt[j-2]) > opt[j-1]:
-            
 
-            solLenDif = j - sol_items[ len(sol_items) - 1]
-            if  (solLenDif > 1):
-                sol_items.append(j)
+    tot = sol_tot_weight = opt[len(opt)-1]
 
-            opt.append(weights[j] + opt[j-2])
+    l = len(opt)
+    weights.reverse()
+    opt.reverse()
 
-        # if exclusive
-        else:
-            if opt[j-2] == opt[j-1]:
-                sol.items[len(sol_items) -1 ] = j
-            opt.append(opt[j -1])
-    
-    # opt(i) = max(v_i + opt(i -2), opt(i - 1))
+    for i in range(0,l):
+        if tot == opt[i]:
+            if i+2 < l:
+                if opt[i] - weights[i] == opt[i+2]:
+                    tot = tot - weights[i]
+                    sol_items.append(len(opt) - 1 - i)
+            else:
+                if tot - weights[i] == 0:
+                    tot = tot - weights[i]
+                    sol_items.append(len(opt) - 1 - i)
 
-    
-    sol_tot_weight = opt[len(opt) - 1 ]
+    opt.reverse()
 
     return (opt, sol_tot_weight, sorted(sol_items))
     
 
 def main():
-    inputs = [31997,6146,28997,16102, 17552, 8379, 15478,18320,6912,28872, 12816, 8097, 25014]
-    (opt, sol_tot_weight,sol_items) = mwis(len(inputs) , inputs)
+    
+    input = [8,3,7,10,4]
+
+    #call mwis
+    (opt, sol_tot_weight, sol_items) = mwis(len(input), input)
+
     return 0
 
 if __name__ == "__main__":

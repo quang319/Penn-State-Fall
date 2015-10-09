@@ -1,0 +1,46 @@
+def mwis (n, weights):
+
+    opt = list()
+    sol_items = list()
+    
+    for i, val in enumerate(weights):
+        if i == 0:
+            opt.append(val)
+        elif i == 1:
+            opt.append(max(opt[0], val))
+        else:
+            opt.append(max(opt[i-1], opt[i-2] + val))
+
+    tot = sol_tot_weight = opt[len(opt)-1]
+
+    l = len(opt)
+    weights.reverse()
+    opt.reverse()
+
+    for i, val in enumerate(opt):
+        if tot == val:
+            if i+2 < l:
+                if val - weights[i] == opt[i+2]:
+                    tot = tot - weights[i]
+                    sol_items.append(len(opt) - 1 - i)
+            else:
+                if tot - weights[i] == 0:
+                    tot = tot - weights[i]
+                    sol_items.append(len(opt) - 1 - i)
+
+                
+    opt.reverse()
+
+    return (opt, sol_tot_weight, sorted(sol_items))
+    
+
+#Read input
+f = open("input.txt", "r")
+weights = [int(x) for x in f.readline().split()]
+n = len(weights)
+
+(opt, sol_tot_weight, sol_items) = mwis(n, weights)
+ 
+print ' '.join(map(str, opt))
+print sol_tot_weight
+print ' '.join(map(str, sol_items))

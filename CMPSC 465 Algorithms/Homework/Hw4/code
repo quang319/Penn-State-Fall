@@ -1,0 +1,50 @@
+ComputeMinimartOPT(n,x,r){
+	
+	Create list f such that fi = xi + 5
+	Sort minimarts by finishing time such that f1 < f2 .... < fn
+	Compute p(1), p(2).... p(n)
+	create a new OPT list
+
+	MaxProfit = MinimartOPT(n,r,p,OPT)
+	MinimartPrint(n,x,r,p,OPT)
+}
+
+MinimartOPT (n,r,p,OPT) {
+	OPT[0] = 0
+	for j = 1 to n 
+		OPT[j] = max( (r[j] + OPT( p(j) )) , OPT(j - 1))
+	return OPT(n)
+
+
+MinimartPrint(n,x,r,p,OPT) {
+	if n == 0 
+		don't print anything
+	if ( r[n] + OPT( p[n] ) ) > OPT[n -1]
+		print x[n]
+		MinimartPrint(p[n],r,p,OPT)
+	else 
+		print x[n-1]
+}
+
+
+
+ComputeP(n,x,f,p){
+	for i = n to 0
+		p[i] = GetMutualCompatible(0,i,x,f)
+}
+
+GetMutualCompatible(s,e,x,f){
+	// If empty
+	if s == e
+		return s
+
+	mid = (s + e) // 2
+	if f[mid] > x[e]
+		return GetMutualCompatible(s,mid -1 ,x,f)
+	elseif f[mid] < x[e]
+		if mid == 0
+			return 0
+		return GetMutualCompatible(s,mid,x,f)
+	else 
+		return mid
+}
