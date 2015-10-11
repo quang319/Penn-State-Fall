@@ -1,4 +1,4 @@
-import sys
+﻿import sys
 from math import floor
 
 #main function
@@ -15,7 +15,10 @@ def GetMutualCompatible(s,e,x,f):
 
     mid = (s+e)//2
     if f[mid] > x[e]:
+        if mid == 0:
+            return 0
         return GetMutualCompatible(s,mid -1,x,f)
+
     elif f[mid] < x[e]:
         if mid == 0:
             return 0
@@ -25,7 +28,7 @@ def GetMutualCompatible(s,e,x,f):
 
 def main():
     
-    x = [1,7,8,13,14,19]
+    x = [1,4,5,6]
     f = []
     p = []
     for i,val in enumerate(x):
