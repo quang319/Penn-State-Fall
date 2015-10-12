@@ -96,6 +96,9 @@ OutputQueuePointer Dc.b       $00
 FlgTypeWrite      dc.b        $00               ; Flag for the typewriter program 
                                                 ; 0 = normal program , 1 = typewriter program
 MsgInvalidInput   DC.b        'Invalid Input. Please try again.',$00
+Operand1          dc.w        $00
+Operand2          dc.w        $00
+Operator          dc.b        $00
 
 
 StackSP                                         ; remaining memory space for stack data
@@ -117,46 +120,39 @@ pgstart           lds         #pgstart          ; initialize the stack pointer
                   staa        PORTB    
 
 
-                  ldx         #MsgIntro1        ; Print the introduction messages
-                  jsr         printmsg
-                  
-                  ldx         #MsgIntro2        
-                  jsr         printmsg
 
-                  ldx         #MsgIntro3        
-                  jsr         printmsg
-
-                  ldd         #MsgQueue         ; initialize the MsgQueuePointer to the address of the MsgQueue
-                  std         MsgQueuePointer
 
 
                   
 loop 
+                  ldx         #MsgQueue
+                  ldaa        #'0'
+                  ldab        #'2'
+                  std         2,x+
+                  ldaa        #'+'
+                  ldab        #'1'
+                  std         2,x+
+                  ldaa        #'2'
+                  ldab        #'3'
+                  std         2,x+
+                  ldaa        #'0'
+                  ldab        #'0'
+                  std         2,x+
+                  ldx         #MsgQueue
+                  ldaa        #1
+                  jsr         CalculatorConverter
+                  pshx
+                  pulx
+                  ldaa        #2
+                  jsr         CalculatorConverter
+                  pshx
+                  pulx
+                  ldaa        #4
+                  jsr         CalculatorConverter
 
+                  
 
-                  brset       FlgTypeWrite,$01,TypeWriterLoop
-                                                ; if this flag is set then we should be perform the typewriter function only
-
-                  jsr         getchar           ; type writer - check the key board
-                  cmpa        #$00              ;  if nothing typed, keep checking
-                  beq         loop
-
-                  jsr         putchar           ; is displayed on the terminal window
-                  jsr         OperateOnInput    ; This is where we perform the majority of the program
-                  Bra         loop
-
-TypeWriterLoop
-                  jsr         getchar           ; type writer - check the key board
-                  cmpa        #$00              ;  if nothing typed, keep checking
-                  beq         TypeWriterLoop
-                                                ;  otherwise - what is typed on key board
-                  jsr         putchar           ; is displayed on the terminal window
-                  cmpa        #CR
-                  bne         TypeWriterLoop            ; if Enter/Return key is pressed, move the
-                  ldaa        #LF               ; cursor to next line
-                  jsr         putchar
-
-                  bra         TypeWriterLoop
+                  bra         loop
 
 
 *************************************************************************
@@ -563,6 +559,160 @@ ClearOutputQueue
                   rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+; Inputs: 
+;           REgX : The address of the queue of ASCII char that the function should operate on 
+;           RegA : Flags registers
+;                 - 1st bit = First operand state
+;                 - 2nd bit = Operator State 
+;                 - 3nd bit = Second operator State
+; Outputs:
+;           RegY : The result of the operation. 16 bit number if it was in operator1 or operator1 state
+;                       - The value of the ASCII char - $30 if it is an operator
+;           RegA : Flag registers 
+;                 - 1st bit  = The result was successful that that the program should move onto the next state 
+;           RegX : 
+;                 - This points to the address of the invalid char if the result was invalid 
+;                 - This points to the address of the last conversion
+CalculatorConverter
+                  pshx
+                  psha
+                  ; Check if we are on 1st operand state
+                  brset       sp,2,CalculatorConverter_Opter
+                  brset       sp,4,CalculatorConverter_Opnd2
+CalculatorConverter_Opnd1
+                  ldab        x
+                  jsr         CvrtASCIIDecToBin
+                  ; check if the operand is valid or not 
+                  cmpb        #$FF 
+                  beq         CalculatorConverter_Opnd1_test
+
+                  ; Test if this is the 100th place. If so multiply by 100 and add to y
+                  pshb  
+                  tfr         x,d
+                  subd        2,sp
+                  bne         CalculatorConverter_Opnd1_10th
+                  ldaa        #100
+                  pulb
+                  mul 
+                  addd        Operand1
+                  std         Operand1
+                  inx         
+                  bra         CalculatorConverter_Opnd1
+CalculatorConverter_Opnd1_10th
+                  cpd         #1
+                  bne         CalculatorConverter_Opnd1_1th
+                  ldaa        #10
+                  pulb
+                  mul 
+                  addd        Operand1
+                  std         Operand1
+                  inx         
+                  bra         CalculatorConverter_Opnd1
+CalculatorConverter_Opnd1_1th
+                  pulb
+                  clra        
+                  addd        Operand1
+                  std         Operand1
+                  inx         
+                  bra         CalculatorConverter_Done
+
+
+CalculatorConverter_Opnd1_test    
+                  ; if Operand1 is 0 than this means that this is an invalid input
+                  ; If Operand1 != 0 then this must means that this is an operator 
+                  brclr       Operand1,$FF,CalculatorConverter_Invalid
+                  bra         CalculatorConverter_Done
+
+
+CalculatorConverter_Opter
+                  ldab        x 
+                  cmpb        #'+'
+                  beq         CalculatorConverter_Opter_Valid
+                  cmpb        #'-'
+                  beq         CalculatorConverter_Opter_Valid
+                  cmpb        #'*'
+                  beq         CalculatorConverter_Opter_Valid
+                  cmpb        #'/'
+                  beq         CalculatorConverter_Opter_Valid
+                  bra         CalculatorConverter_Invalid
+CalculatorConverter_Opter_Valid
+                  stab        Operator
+                  inx
+                  bra         CalculatorConverter_Done
+
+
+CalculatorConverter_Opnd2
+                  ldab        x
+                  jsr         CvrtASCIIDecToBin
+                  ; check if the operand is valid or not 
+                  cmpb        #$FF 
+                  beq         CalculatorConverter_Opnd2_test
+
+                  ; Test if this is the 100th place. If so multiply by 100 and add to y
+                  pshb  
+                  tfr         x,d
+                  subd        2,sp
+                  bne         CalculatorConverter_Opnd2_10th
+                  ldaa        #100
+                  pulb
+                  mul 
+                  addd        Operand2
+                  std         Operand2
+                  inx         
+                  bra         CalculatorConverter_Opnd2
+CalculatorConverter_Opnd2_10th
+                  cpd         #1
+                  bne         CalculatorConverter_Opnd2_1th
+                  ldaa        #10
+                  pulb
+                  mul 
+                  addd        Operand2
+                  std         Operand2
+                  inx         
+                  bra         CalculatorConverter_Opnd2
+CalculatorConverter_Opnd2_1th
+                  pulb
+                  clra        
+                  addd        Operand2
+                  std         Operand2
+                  inx         
+                  bra         CalculatorConverter_Done
+
+
+CalculatorConverter_Opnd2_test    
+                  ; if Operand1 is 0 than this means that this is an invalid input
+                  ; If Operand1 != 0 then this must means that this is an operator 
+                  brclr       Operand1,$FF,CalculatorConverter_Invalid
+                  bra         CalculatorConverter_Done
+
+
+
+CalculatorConverter_Invalid
+                  ldaa        #0
+                  ldab        3,sp+
+                  rts
+
+CalculatorConverter_Done
+                  ldaa        #1
+                  ldab        3,sp+
+                  rts 
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Input:    RegB: The ascii Dec 
+; Output:   RegB: The binary output of the decimal or 0xFF if the result is not
+CvrtASCIIDecToBin 
+                  subb        #$30
+                  ; Test if the answer is greater than or equal to 10
+                  cmpb        #10
+                  bhs         CvrtASCIIDecToBin_NotBin
+                  rts 
+CvrtASCIIDecToBin_NotBin
+                  ldab        #$FF
+                  rts 
 
 ; Inputs: Top 2 block in RegX and the last block in RegB
 ; Output: The binary representation on RegB
