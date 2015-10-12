@@ -91,7 +91,7 @@ testing           dc.b        14
 
 MsgQueue          DC.B        $00,$00,$00,$00,$00,$00,$00,$00,$00   ; Queue to store the user inputs
 MsgQueuePointer   Dc.w        $0000             ; Pointer to keep track of where we are in the queue
-OutputQueue       Dc.b        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0   ; queue to store the output message 
+OutputQueue       Dc.b        32,32,32,32,32,32,32,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0   ; queue to store the output message 
 OutputQueuePointer Dc.b       $00
 FlgTypeWrite      dc.b        $00               ; Flag for the typewriter program 
                                                 ; 0 = normal program , 1 = typewriter program
