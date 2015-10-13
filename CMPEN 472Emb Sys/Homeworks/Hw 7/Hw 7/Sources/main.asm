@@ -2,28 +2,22 @@
 *
 * Title:        SCI program
 *
-* Objective:    CSE472 Homework 5
+* Objective:    CSE472 Homework 7
 *
 * Revision:     V1.0
 *
-* Date:         9/30/2015
+* Date:         10/12/2015
 *
 * Programmer:   Quang Nguyen
 *
 * Company:      PSU CMPEN472
 *
-* Purpose:      To use the SCI interface to control the microcontroller. Below are the ASCII commands that the program takes to control everything
-*                       - L1 = Fade LED1 to 100%
-*                       - F1 = Fade LED1 to 0%
-*                       - L2 = Turn on LED2
-*                       - F2 = Turn off LED2
-*                       - S####
-*                             Read an address from the controller. (Note: the address needs to be in Hex)
-*                       - W#### ###
-*                             Write a value to an address. Value to be writen to the controller can be Hex or Decimal. If hex, user must add a $ in front of the number
-*                       - QUIT = this will allow the user to enter the typewriter program
-*                       - Any other inputs are Invalid
-*                       * Note: uppercase and lowercase does not matter
+* Purpose:      To use the SCI interface to use the microcontroller as a calculator. Below are restrictions regarding the inputs
+*                       - Inputs must be positive decimal number
+*                       - Input must have a maximum of 3 digits
+*                       - Valid operators are: +,-,*, and /
+*                       - Only 2 operands and one operator are allow. Spaces may not be used
+
 *
 * Register use: 
 *               D,X,Y
@@ -33,7 +27,7 @@
 *
 * Input:        Parameters hard coded in the program.
 *
-* Output:       LED 1,2,3,4 at PORTB bit 4,5,6,7
+* Output:       SCI outputs
 *
 * Observation:  
 *
@@ -96,9 +90,9 @@ OutputQueuePointer Dc.b       $00
 FlgTypeWrite      dc.b        $00               ; Flag for the typewriter program 
                                                 ; 0 = normal program , 1 = typewriter program
 MsgInvalidInput   DC.b        'Invalid Input. Please try again.',$00
-VarOperand1       dc.w        $00
-VarOperand2       dc.w        $00
-Operator          dc.b        $00
+VarOperand1       dc.w        $00               ; variable use to store the value of operand 1
+VarOperand2       dc.w        $00               ; variable use to store the value of operand 2
+Operator          dc.b        $00               ; variable use to store the value of the operator
 TypeOfErrorFlag   dc.b        $00               ; 0 = InvalidFormat , 1 = Overflow
 NegativeFlag      dc.b        $00               ; If one then should put a negative sign onto the screen
 
@@ -162,16 +156,11 @@ loop
 * Name:           OperateOnInput
 *
 * Fuction:        this subroutine takes in the user's input in RegA and output the proper result
-*                 Below are the possible inputs from the user
-*                       - L2 = Turn on LED2
-*                       - F2 = Turn off LED2
-*                       - L4 = Turn on LED4
-*                       - F4 = Turn off LED4
-*                       - S#### = Read from a register
-*                       - W#### ### = Write to a register
-*                       - QUIT = this will set the FlgTypeWrite variable
-*                       - Any other inputs are Invalid
-*                       * Note: uppercase and lowercase does not matter                       
+*                 Below are restrictions that the function will impose
+*                       - Inputs must be positive decimal number
+*                       - Input must have a maximum of 3 digits
+*                       - Valid operators are: +,-,*, and /
+*                       - Only 2 operands and one operator are allow. Spaces may not be used                      
 *
 *
 * Parameters:     - RegA: this contains the user's input
@@ -228,6 +217,7 @@ OperateOnInput_Calculate
                   tfr         d,y
 
 OperateOnInput_Calculate_QueueLoop
+                  ; Loop through and copy the MsgQueue onto the OutputQueue
                   ldab         1,x+ 
                   stab         1,y+
 
@@ -277,6 +267,7 @@ OperateOnInput_Calculate_Add_Output_NoNegative
                   lbra         OperateOnInput_ResetAfterCR
 
 OperateOnInput_Calculate_Add_Thoundsandth
+                  ; Prevent leading zeros
                   puld        
                   cmpa        #$30
                   beq         OperateOnInput_Calculate_Add_Hundreth
@@ -289,6 +280,7 @@ OperateOnInput_Calculate_Add_Thoundsandth
                   lbra         OperateOnInput_ResetAfterCR
 
 OperateOnInput_Calculate_Add_Hundreth 
+                  ; Prevent leading zeros
                   cmpb        #$30
                   beq         OperateOnInput_Calculate_Add_Tenth
                   stab        1,x+
@@ -299,6 +291,7 @@ OperateOnInput_Calculate_Add_Hundreth
                   lbra         OperateOnInput_ResetAfterCR
 
 OperateOnInput_Calculate_Add_Tenth
+                  ; Prevent leading zeros
                   puld        
                   cmpa        #$30
                   beq         OperateOnInput_Calculate_Add_Oneth
@@ -315,14 +308,16 @@ OperateOnInput_Calculate_Add_Oneth
 
 
 OperateOnInput_Calculate_Sub
+                  ; If we have to do subtraction
                   ldaa        #'-'
                   cmpa        Operator 
                   bne         OperateOnInput_Calculate_Mult
-
+                  ; perform the subtraction
                   ldd         VarOperand1
                   subd        VarOperand2
                   bge         OperateOnInput_Calculate_Add_Output
 
+                  ; If if the result is negative, set the NegativeFlag
                   pshd  
                   ldaa        #1
                   staa        NegativeFlag
@@ -338,6 +333,7 @@ OperateOnInput_Calculate_Sub
 
 
 OperateOnInput_Calculate_Mult
+                  ; If we have to perform multiplication
                   ldaa        #'*'
                   cmpa        Operator 
                   bne         OperateOnInput_Calculate_Div
@@ -349,6 +345,7 @@ OperateOnInput_Calculate_Mult
                   ; Check if the upper half is zero 
                   cpy         #0
                   bne         OperateOnInput_Calculate_Mult_Overflow
+                  ; the lower half should be less than than 2^15 -1 
                   cpd         #$7fff
                   bgt         OperateOnInput_Calculate_Mult_Overflow
                   puly
@@ -357,12 +354,14 @@ OperateOnInput_Calculate_Mult
                   lbra         OperateOnInput_Calculate_Add_Output
 
 OperateOnInput_Calculate_Mult_Overflow
+                  ; Overflow handler
                   puly
                   ldaa        #1
                   staa        TypeOfErrorFlag
                   lbra        OperateOnInput_InvalidInput
 
 OperateOnInput_Calculate_Div
+                  ; If we have to perform division
                   pshx
                   ldd         VarOperand1
                   ldx         VarOperand2
@@ -384,9 +383,11 @@ OperateOnInput_InvalidInput
                   tfr         d,y
 
 OperateOnInput_InvalidInput_QueueLoop
+                  ; Copy the MsgQueue to the OutputQueue
                   ldab        1,x+ 
                   stab        1,y+
-                  tfr         x,d 
+                  tfr         x,d
+                  ; We only want to print until where the invalid format was 
                   subd        sp 
                   lbls         OperateOnInput_InvalidInput_QueueLoop
                   pulx
@@ -399,6 +400,7 @@ OperateOnInput_InvalidInput_QueueLoop
                   ldaa        #LF 
                   jsr         putchar
 
+                  ; Check the flag to see what kind of error we have
                   brset       TypeOfErrorFlag,1,OperateOnInput_InvalidInput_Overflow
                   ; Print the InvalidFormat string
                   ldx         #InvalidFormat 
@@ -461,7 +463,8 @@ OperateOnInput_ResetAfterCR_OutputQueueLoop
                   subd        sp 
                   lbls        OperateOnInput_ResetAfterCR_OutputQueueLoop
                   puld
-   
+                  
+                  ; Clear all the global variables
                   ldd         #MsgQueue
                   std         MsgQueuePointer 
                   ldd         #0
@@ -473,7 +476,8 @@ OperateOnInput_ResetAfterCR_OutputQueueLoop
                   bra         OperateOnInput_EndOfSR
 
 OperateOnInput_NotEqualCR
-
+                  
+                  ; If the input wasn't a CR then we can just save it
                   ldx         MsgQueuePointer
                   staa        x
                   inx 
@@ -494,6 +498,10 @@ OperateOnInput_EndOfSR
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+; Function: This function acts as a state machine. The current state of it is set by regA. On Operand1 and Operand2 state 
+;           it will convert the queue referenced by RegX to the proper VarOperand1 or VarOperand2 variables. 
+;           On Operator state, it will check to ensure that the operator is one of the 4 allowable operators. 
+;
 ; Inputs: 
 ;           REgX : The address of the queue of ASCII char that the function should operate on 
 ;           RegA : Flags registers
@@ -501,10 +509,10 @@ OperateOnInput_EndOfSR
 ;                 - 2nd bit = Operator State 
 ;                 - 3nd bit = Second operator State
 ; Outputs:
-;           RegY : The result of the operation. 16 bit number if it was in operator1 or operator1 state
+;           RegY : The result of the operation. 16 bit number if it was in operator1 or operator2 state
 ;                       - The value of the ASCII char - $30 if it is an operator
 ;           RegA : Flag registers 
-;                 - 1st bit  = The result was successful that that the program should move onto the next state 
+;                 - 1st bit  = 1 if the result was successful. 0 if an invalid input was found
 ;           RegX : 
 ;                 - This points to the address of the invalid char if the result was invalid 
 ;                 - This points to the address of the last conversion
@@ -535,6 +543,7 @@ CalculatorConverter_Opnd1
                   std         VarOperand1
                   inx         
                   bra         CalculatorConverter_Opnd1
+                  ; Test if this is the 10th place. If so multiply by 10 and add to y
 CalculatorConverter_Opnd1_10th
                   cpd         #1
                   bne         CalculatorConverter_Opnd1_1th
@@ -587,7 +596,7 @@ CalculatorConverter_Opnd1_test_div100th
                   lbra         CalculatorConverter_Done
 
 
-
+                  ; Verify that the operator is valid
 CalculatorConverter_Opter
                   ldab        x 
                   cmpb        #'+'
@@ -604,7 +613,7 @@ CalculatorConverter_Opter_Valid
                   inx
                   bra         CalculatorConverter_Done
 
-
+                  ; Operand2 state
 CalculatorConverter_Opnd2
                   ldab        x
                   jsr         CvrtASCIIDecToBin
@@ -624,6 +633,7 @@ CalculatorConverter_Opnd2
                   std         VarOperand2
                   inx         
                   bra         CalculatorConverter_Opnd2
+                  ; Test if this is the 10th place. If so multiply by 10 and add to y
 CalculatorConverter_Opnd2_10th
                   cpd         #1
                   bne         CalculatorConverter_Opnd2_1th
@@ -785,115 +795,6 @@ CvrtBinToASCIIDec
                   puly
                   rts 
 
-; Input: Higher 2 bytes in RegX, Lower 2 bytes in RegD
-CvrtASCIIHexStringToBin
-                  pshx
-                  pshd
-                  ; Convert the smallest byte to binary
-                  jsr CvrtASCIIHexToBin
-                  stab        1,sp
-                  ; Convert the 2nd smallest byte to binary
-                  ldab        sp 
-                  jsr CvrtASCIIHexToBin
-                  stab        sp 
-                  ; Convert the 2nd largest byte to binary
-                  ldab        3,sp 
-                  jsr CvrtASCIIHexToBin
-                  stab        3,sp 
-                  ; convert the largest byte to binary 
-                  ldab        2,sp
-                  jsr CvrtASCIIHexToBin
-                  stab        2,sp
-
-                  ; Pull the results from the stack
-                  puld
-                  pulx
-
-                  rts
-
-; Input: binary # in regB
-; Result = RegA(The larger hex), RegB(The smaller hex)
-CvrtBinToASCIIHex
-                  ; Get the value for the larger hex place
-                  clra         
-                  ldx         #16
-                  idiv
-                  pshb                          ; Push B
-                  cpx         #10
-                  blo         CvrtBinToASCIIHex_1stHigher
-                  ldab        #7
-                  abx         
-CvrtBinToASCIIHex_1stHigher
-                  ldab        #$30
-                  abx
-                  pulb                          ; Pull B
-                  pshx                          ; Push X
-                  ; Get the value for the smaller place 
-                  cmpb        #10
-                  blo         CvrtBinToASCIIHex_2ndHigher
-                  addb        #7
-CvrtBinToASCIIHex_2ndHigher
-                  addb        #$30
-                  pshb                          ; Push B
-
-                  ; shuffle stuff around so that RegA has the larger half and RegB has the smallest half
-                   
-                  ldd         1,sp              ; Transfer the higher half onto RegD
-                  tba                           ; transfer B to A 
-                  pulb 
-                  pulx
-
-                  rts 
-
-; Value of ASCII hex to convert to is in RegA
-CvrtASCIIHexToBin
-
-                  subb        #$30               ; Number representation of Hex starts at 30
-                  ; Check to see if the ASCII char is "A" or higher
-                  cmpb        #10               ; If hex is "A" then the value will be higher than 9
-                  bls         CvrtASCIIHexToBin_NotAbove9
-                  subb        #16                ; $30 = 48, and "A" = 65. 65 - 48 - 16 = 1
-                  addb        #9
-CvrtASCIIHexToBin_NotAbove9
-                  rts
-; This function returns the concatination of the X and the D registers in RegD
-; RegD should contain the lower half and RegX should contain the upper half
-ConcatinateDnX
-                  pshx
-                  pshd
-                  ; Combine RegA and RegB
-                  jsr         Concatinate2Hex
-                  staa        1,sp
-                  ldd         2,sp
-                  jsr         Concatinate2Hex
-                  staa        3,sp 
-                  tab        
-                  clra 
-                  lsld         
-                  lsld        
-                  lsld        
-                  lsld        
-                  lsld        
-                  lsld        
-                  lsld        
-                  lsld        
-                  addd        sp 
-                  ldx         4,sp+
-                  rts 
-
-; This function receive the upper nibble in RegA and lower nibble in RegB
-; It outputs the result in RegA                 
-Concatinate2Hex
-                  lsla 
-                  lsla
-                  lsla
-                  lsla      
-                  aba         
-                  rts
-
-
-
-
 
 
 
@@ -965,230 +866,15 @@ getchar_NoInput   ldaa        #0
                   rts         
 
 
-************************************************************************
-*
-* Name:           TransitionLED
-*
-* Fuction:        This subroutine transiton LED 1 from 0% to 100% (or vice versa) for 5 seconds 
-*
-* Parameters:     - RegA: this contains the direction 
-*                       0 = Brighten      1 = dimming
-*
-* Registers Used:
-*
-* Stack Pointer:  sp = the value of the current pwm duty cycle 
-*
-* Example:        *The code below will transiton LED 1 from 0% to 100% brightness  
-*                 ldaa        #$00
-*                 jsr         TransitionLED
-*
-* Comments:       
-*
-*************************************************************************
-
-TransitionLED
-                  pshb                          ; push RegB into the sp
-                  anda        #$01              ; see if we need to brighten or dim the LED
-
-                  beq         TransitionLED_Brightening_Setup   
-                                                ; Brighten the LED if RegA == 0
-                  ldaa        #$64              ; We will need to go from 100% bright to 0%
-                  psha                          ; push this into the sp
-
-TransitionLED_Dimming
-                  ldab        sp                ; setting up the parameters for the SetTimePerPWM subroutine
-                  ldaa        1,sp              ; Parameter: The number of millisecond per iteration
-                  jsr         SetTimePerPWM     ;
-                  ldaa        sp                
-                  deca                          ; Decreasing the % duty cycle (aka dimming the light)
-                  staa        sp                
-                  bne         TransitionLED_Dimming
-                                                ; continue until the % duty cycle == 0 
-                  bra         TransitionLED_End
-
-TransitionLED_Brightening_Setup
-                  clra                          ; We will need to go from 0% bright to 100%
-                  psha                          ; push this into the sp
-
-TransitionLED_Brightening 
-                  ldab        sp                ; setting up the parameters for the SetTimePerPWM subroutine
-                  ldaa        1,sp              ; Parameter: The number of millisecond per iteration
-                  jsr         SetTimePerPWM     ;
-                  ldaa        sp                
-                  inca                          ; Increasing the % duty cycle
-                  staa        sp                
-                  cmpa        #$64              ; Check to see if it is at %100 duty cycle 
-                  bne         TransitionLED_Brightening
-                                                ; branch if it is 
-
-TransitionLED_End 
-                  pula                          ; pop RegA and RegB from sp so that the program can return to the right place 
-                  pulb
-                  rts 
-
-************************************************************************
-*
-* Name:           SetTimePerPWM
-*
-* Fuction:        This subroutine will hold the pwm duty cycle for the specified period of time in ms 
-*
-* Parameters:     - RegB: This contains the % of time that the LED should be on (aka. duty cycle)
-*                 - RegA: This contains the period that the pwm should hold for in ms 
-*
-* Registers Used: - RegD 
-*                 - RegX 
-*
-* Stack Pointer:  sp = period to hold the pwm for
-*                 sp + 1 = the duty cycle of the pwm 
-*
-* Example:        *The code below will set LED 1 to 60% duty cycle for 9 millisecond 
-*                 ldab        #$3C
-*                 ldaa        #$09
-*                 jsr         SetTimePerPWM
-*
-* Comments:       
-*
-*************************************************************************
-SetTimePerPWM 
-                  pshd                          ; store RegD onto the sp 
-SetTimePerPWMLoop
-                  ldab        1,sp                ; load the duty cycle for the sub rt.
-                  jsr         SetPWMDutyCycle   ; Call the sub rt.
-                  ldaa        sp              ; Load the pwm period into RegA 
-                  deca                          
-                  staa        sp              ; decrement and then store it back to the sp
-                  bne         SetTimePerPWMLoop ; loop back if the pwm period != 0
-                  puld                          ; pop the sp so that we can return to the right place
-                  rts  
-                  
-
-
-
-
-
-************************************************************************
-*
-* Name:           SetPWMDutyCycle
-*
-* Fuction:        This Subroutine turn LED 1 on and off by the duty cycle specifies
-*                 in RegB
-*
-* Parameters:     - RegB: This contains the % of time that the LED should be on (aka. duty cycle)
-*
-* Registers Used: - RegD 
-*                 - RegX
-*
-* Stack Pointer:  sp = the off duty cycle 
-*                 sp + 1 = the on duty cycle 
-*
-* Example:        *The code below will set LED 1 to 60% duty cycle
-*                 ldab        #$3C
-*                 jsr         SetPWMDutyCycle
-*
-* Comments:       A single duty cycle takes 1000 us 
-*
-*************************************************************************
-SetPWMDutyCycle
-                  *******************************************************
-                  * Calculate the on and off duty cycles
-                  *******************************************************
-
-                  pshb                          ; store regB into the sp
-                  ldaa        #$64              ; load 100 into RegA
-                  suba        sp                ; REgA = 100 - PwmOnCounter 
-                  psha                          ; This subtraction is the off duty
-                                                ; push the result onto the sp 
-
-                  *******************************************************
-                  * Turn on LED 2 for the duration of the on duty cycle
-                  *******************************************************
-
-                  bclr        PORTB, $10        ; Turn on LED 1
-                  ldab        1,sp              ; load PwmOnCounter into RegB
-                  clra                          ; clear RegA because the subroutine delay_MS
-                                                ; reads the whole entire D register 
-                  cba                           ; skip the delay if the LED is suppose to be off for 100% of the time
-                  beq         SetTimePerPWM_off
-                  jsr         delay_10US        ; Keep LED 2 on for the duration of PwmOnCounter in mS 
-
-                  *******************************************************
-                  * Turn off LED 2 for the duration of the off duty cycle
-                  *******************************************************
-SetTimePerPWM_off
-                  bset        PORTB, $10        ; Turn off LED 1
-                  ldab        sp                ; load pwmOffCounter into RegB
-                  clra                          ; clear be for the same reason as above
-                  cba                           ; skip the delay if the LED is suppose to be on for 100% of the time
-                  beq         SetTimePerPWM_end
-                  jsr         delay_10US
-
-SetTimePerPWM_end
-                  pula                          ; Restore the content of the registers the way it originally was
-                  pulb                          
-                  rts                           ; We have completed a whole duty cycle (100 ms) we can return back
-                                                ; to the caller
-
-
-
-************************************************************************
-*
-* Name:           delay_10US
-*
-* Fuction:        This Subroutine will delay the program by the value specifies in
-*                 register A. Time(10uS) = RegD
-*
-* Parameters:     - RegD: The number of uS to delay for
-*
-* Registers Used: - RegD - for the Parameter 
-*                 - RegX - For the delay for the delay_10US_LOOP
-*
-* Example:        *The code below will delay the program by 100 uS
-*                 ldd        #$0000
-*                 jsr         delay_10US
-*
-* Comments:       This Subroutine does not use interupts for the delay. It uses
-*                 NOP as a way to delay the program. 
-*
-*************************************************************************
-delay_10US     
-                  pshd                          ; push RegD onto the stack
-delay_10US_LOOP_2
-
-                  *******************************************************
-                  * this section will delay the program by 10 uS
-                  * 
-                  * Value for ldx = ((10us * 24MHz) -3) / 5 
-                  *******************************************************
-
-                  ldx         #$002F            ; load the amount of time the loop needs to
-                                                ; run to produce 10 mS into RegX
-delay_10US_LOOP 
-                  NOP 
-                  dex                           ; Decrement RegX
-                  bne         delay_10US_LOOP   ; jump back to delay_US_LOOP if != 0
-
-                  *******************************************************
-                  * end 
-                  *******************************************************
-
-                  ldx         sp                ; the stack pointer contains the value of parameter that was passed in by RegD
-                  dex                           ; Decrement RegX by 1
-                  stx         sp                ; store RegX
-                  bne         delay_10US_LOOP_2 ; Branch back to the loop if not == 0
-                  puld                          ; Restore the original content of regD
-                  rts                           ; Return to the caller
-
-
-
 ;OPTIONAL
 ;more variable/data section below
 ; this is after the program code section
 ; of the RAM.  RAM ends at $3FFF
 ; in MC9S12C128 chip
 
-MsgIntro1         dc.b        'Welcome! The followings are the commands for the program',CR,LF,'L2 = LED2 ON, F2 = LED2 OFF, L4 = LED4 ON,  F4 = LED4 OFF',CR,LF,NULL
-MsgIntro2         dc.b        'S#### to read to a register and W#### ### to write to a register ',CR,LF,NULL
-MsgIntro3         dc.b        'QUIT = enable the program to enter typewriter mode.',CR,LF,NULL
+MsgIntro1         dc.b        'Welcome! You are entering a program that will use the HC12 as a calculator.',CR,LF,'Operand inputs must be positive decimal numbers and have maximum of 3 digits limit.',CR,LF,NULL
+MsgIntro2         dc.b        'Leading zeros are valid inputs, but spaces are not allowable.',CR,LF,'The four valid operators are: +,-,*, and /',CR,LF,NULL
+MsgIntro3         dc.b        'Enjoy!.',CR,LF,NULL
 InvalidFormat     dc.b        '       Invalid input format',CR,LF,NULL
 Ecalc             dc.b        'Ecalc> ',NULL
 OverflowError     dc.b        '       Overflow error',CR,LF,NULL 
