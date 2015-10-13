@@ -17,8 +17,10 @@
 *                       - F1 = Fade LED1 to 0%
 *                       - L2 = Turn on LED2
 *                       - F2 = Turn off LED2
-*                       - L4 = Turn on LED4
-*                       - F4 = Turn off LED4
+*                       - S####
+*                             Read an address from the controller. (Note: the address needs to be in Hex)
+*                       - W#### ###
+*                             Write a value to an address. Value to be writen to the controller can be Hex or Decimal. If hex, user must add a $ in front of the number
 *                       - QUIT = this will allow the user to enter the typewriter program
 *                       - Any other inputs are Invalid
 *                       * Note: uppercase and lowercase does not matter
@@ -87,13 +89,18 @@ RDRF              EQU         $20
                                                 ; memory $3000 to $30FF are for data
 testing           dc.b        14
 
-MsgQueue          DC.B        $00,$00,$00,$00,$00,$00,$00,$00,$00   ; Queue to store the user inputs
+MsgQueue          DC.B        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0   ; Queue to store the user inputs
 MsgQueuePointer   Dc.w        $0000             ; Pointer to keep track of where we are in the queue
-OutputQueue       Dc.b        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0   ; queue to store the output message 
+OutputQueue       Dc.b        32,32,32,32,32,32,32,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0   ; queue to store the output message 
 OutputQueuePointer Dc.b       $00
 FlgTypeWrite      dc.b        $00               ; Flag for the typewriter program 
                                                 ; 0 = normal program , 1 = typewriter program
 MsgInvalidInput   DC.b        'Invalid Input. Please try again.',$00
+VarOperand1       dc.w        $00
+VarOperand2       dc.w        $00
+Operator          dc.b        $00
+TypeOfErrorFlag   dc.b        $00               ; 0 = InvalidFormat , 1 = Overflow
+NegativeFlag      dc.b        $00               ; If one then should put a negative sign onto the screen
 
 
 StackSP                                         ; remaining memory space for stack data
@@ -115,32 +122,42 @@ pgstart           lds         #pgstart          ; initialize the stack pointer
                   staa        PORTB    
 
 
+                  ;ldx         #MsgIntro1        ; Print the introduction messages
+                  ;jsr         printmsg
+                  
+                  ;ldx         #MsgIntro2        
+                  ;jsr         printmsg
+
+                  ;ldx         #MsgIntro3        
+                  ;jsr         printmsg
+
+                  ;ldx         #Ecalc        
+                  ;jsr         printmsg
 
                   ldd         #MsgQueue         ; initialize the MsgQueuePointer to the address of the MsgQueue
                   std         MsgQueuePointer
 
+loop 
+                  
+
+                  ldaa        #'7'
+                  jsr         OperateOnInput 
+                  ldaa        #'8'
+                  jsr         OperateOnInput 
+                  ldaa        #'*'
+                  jsr         OperateOnInput 
+                  ldaa        #'9'
+                  jsr         OperateOnInput 
+                  ;ldaa        #'7'
+                  ;jsr         OperateOnInput 
+                  ;ldaa        #'8'
+                  ;jsr         OperateOnInput 
+                  ldaa        #CR
+                  jsr         OperateOnInput 
+                  Bra         loop
 
                   
-loop 
-                  ldaa        #'W'
-                  jsr         OperateOnInput
-                  ldaa        #'3'
-                  jsr         OperateOnInput
-                  ldaa        #'0'
-                  jsr         OperateOnInput
-                  ldaa        #'0'
-                  jsr         OperateOnInput
-                  ldaa        #'0'
-                  jsr         OperateOnInput
-                  ldaa        #' '
-                  jsr         OperateOnInput
-                  ldaa        #'$'
-                  jsr         OperateOnInput
-                  ldaa        #'5'
-                  jsr         OperateOnInput
-                  ldaa        #CR
-                  jsr         OperateOnInput
-                  
+
                   bra         loop
 
 
@@ -156,12 +173,12 @@ loop
 *
 * Fuction:        this subroutine takes in the user's input in RegA and output the proper result
 *                 Below are the possible inputs from the user
-*                       - L1 = Fade LED1 to 100%
-*                       - F1 = Fade LED1 to 0%
 *                       - L2 = Turn on LED2
 *                       - F2 = Turn off LED2
 *                       - L4 = Turn on LED4
 *                       - F4 = Turn off LED4
+*                       - S#### = Read from a register
+*                       - W#### ### = Write to a register
 *                       - QUIT = this will set the FlgTypeWrite variable
 *                       - Any other inputs are Invalid
 *                       * Note: uppercase and lowercase does not matter                       
@@ -171,48 +188,6 @@ loop
 *
 * Registers Used: - RegD and RegX
 *
-* Algorithm:      The subroutine follows the c code below 
-*
-                  ; If (RegA == CR)
-                  ;     if (index is within range)
-                        ;     if (Last 2 chars == 'L2')
-                        ;           Turn on LED2
-                        ;     else if (Last 2 chars == 'F2')
-                        ;           Turn off LED2
-                        ;
-                        ;     else if (Last 2 chars == 'L4')
-                        ;           Turn on LED4
-                        ;     else if (Last 2 chars == 'F4')
-                        ;           Turn off LED4
-                        ;
-                        ;     else if (Last 2 chars == 'L1')
-                        ;           Transition to bright on LED1
-                        ;     else if (Last 2 chars == 'F1')
-                        ;           Transition to dim on LED1
-                        ;
-                        ;     else if (Last 2 chars == "QU")
-                        ;           if (The previous 2 chars == "IT")
-                        ;                 set the flag for the typewriter program
-                        ;     else 
-                        ;           notifiy the user it was an invalid input
-                  ;     else
-                  ;           Tell the user it was an invalid input
-                  ;     Clear MsgQueue so that we get a clean read next time
-                  ; 
-                  ; else 
-                  ;     if (index is within range)
-                        ;     if (RegA > 96)                // Checking if it a lowercase
-                        ;           if (RegA < 123)
-                        ;                 RegA = RegA - 32  // Converting to uppercase
-                  ;           store RegA and increment pointer
-                  ;     else 
-                  ;           increment pointer
-                  ; 
-                  ; return from subroutine 
-*
-* Comments:       Due to 7 bits limitation of the PC relative addressing, some of the blocks of code were moved
-*                 around so that the program can actually branch to it. I appologize if this makes it slightly less
-*                 readable as stuff are now located in seemingly random order. 
 *
 *************************************************************************
 OperateOnInput
@@ -225,334 +200,297 @@ OperateOnInput
 
                   ; Moving the cursor to the next line
                   ldaa        #LF               ; cursor to next line
-                  
-
+            
                   ;jsr         putchar
 
+                  ; Get Operand1 
+                  ldx         #MsgQueue 
+                  ldaa        #1
+                  jsr         CalculatorConverter
+                  ; If invalid print until invalid character 
+                  cmpa        #0
+                  lbeq         OperateOnInput_InvalidInput
 
-                  ldx         #MsgQueue
-                        ;     if ((only 2 in queue) && Last 2 chars == 'L2')
-                  ldd         MsgQueuePointer
-                  subd        #MsgQueue
-                  cpd         #2
-                  lbne        OperateOnInput_STest
-                  ldd         x 
-                  cpd         #$4C32            ; Hex for 'L2'
-                  bne         OperateOnInput_F2Test
-                        ;           Turn on LED2
-                  bclr        PORTB,#$20
-                  lbra         OperateOnInput_ResetAfterCR
+                  ldaa        #2
+                  jsr         CalculatorConverter
+                  ; If invalid print until invalid character 
+                  cmpa        #0
+                  lbeq         OperateOnInput_InvalidInput
 
-OperateOnInput_F2Test
-                        ;     else if ((only 2 in queue) && Last 2 chars == 'F2')
-                  ldd         x 
-                  cpd         #$4632            ; Hex for 'F2'
-                  bne         OperateOnInput_L4Test
-                        ;           Turn off LED2
-                  bset        PORTB,#$20
-                  lbra         OperateOnInput_ResetAfterCR
-                        ;
-                        ;     else if ((only 2 in queue) && Last 2 chars == 'L4')
-OperateOnInput_L4Test
-                  ldd         x 
-                  cpd         #$4C34            ; Hex for 'L4'
-                  bne         OperateOnInput_F4Test
-                        ;           Turn on LED4
-                  bclr        PORTB,#$80
-                  lbra         OperateOnInput_ResetAfterCR
-                        ;     else if ((only 2 in queue) && Last 2 chars == 'F4')
-OperateOnInput_F4Test
-                  ldd         x 
-                  cpd         #$4634            ; Hex for 'F4'
-                  bne         OperateOnInput_STest
-                        ;           Turn off LED4
-                  bset        PORTB,#$80
-                  lbra         OperateOnInput_ResetAfterCR
+                  ldaa        #4
+                  jsr         CalculatorConverter
+                  ; If invalid print until invalid character 
+                  cmpa        #0
+                  lbeq         OperateOnInput_InvalidInput
 
-                        ;     else if ( the 1st chars == 'S')
+                  ; Check if this is the end of the queue, if not then the rest of the queue is invalid 
+                  tfr         x,d 
+                  subd        MsgQueuePointer
+                  beq         OperateOnInput_Calculate
+                  lbra        OperateOnInput_InvalidInput
 
-OperateOnInput_STest
-                  ldaa        x 
-                  cmpa        #$53              ; Hex for 'S'
-                  bne         OperateOnInput_WTest
+OperateOnInput_Calculate
+                  ; Load the output queue with everything minus the result 
+                  ldx         #MsgQueue 
+                  ; message queue needs to be the queue address + 7 
+                  ldd         #OutputQueue
+                  addd        #7
+                  tfr         d,y
 
-                  ; Ensuring that the OutputQueue = "$XXXX = $"
-                  ldy         #OutputQueue
-                  ldaa        #DOLLAR           ; Write a $ to the OutputQueue
-                  staa        y
-                  ldd         1,x               ; Write the ascii address of the input back on the screen
-                  std         1,y
-                  ldd         3,x   
-                  std         3,y     
-                  ldaa        #SPACE 
-                  staa        5,y 
-                  ldaa        #EQUAL 
-                  staa        6,y
-                  ldaa        #SPACE 
-                  staa        7,y 
-                  ldaa        #DOLLAR 
-                  staa        8,y 
+OperateOnInput_Calculate_QueueLoop
+                  ldab         1,x+ 
+                  stab         1,y+
 
-                  ; Now we need to add the output messages
-                  ldy         #MsgQueue 
-                  ldx         1,y               ; Parameter: The larger half needs to go on RegX
-                  ldd         3,y               ; Parameter: the smaller half needs to go on regD
-                  jsr         CvrtASCIIHexStringToBin
-                  jsr         ConcatinateDnX
+                  tfr         x,d 
+                  subd        MsgQueuePointer 
+                  bne         OperateOnInput_Calculate_QueueLoop
 
-                  ; At this point, regD contains the address that the user wants in binary
-                  tfr         d,x 
-                  ldab        0,x               ; Parameter: The binary # to be converted to ASCII hex
-                  pshb                          ; push B
-                  jsr         CvrtBinToASCIIHex
-                  ldy         #OutputQueue
-                  std         9,y 
 
-                  ; Need to add 3 spaces
-                  ldaa        #SPACE 
-                  staa        11,y 
-                  ldaa        #SPACE 
-                  staa        12,y 
-                  ldaa        #SPACE 
-                  staa        13,y 
+                  ; Check if we need to do '+'
+                  ldaa        #'+'
+                  cmpa        Operator
+                  bne         OperateOnInput_Calculate_Sub
 
-                  ; Need to convert the binary to decimal 
-                  pulb                          ; Pull B
+                  ldd         VarOperand1
+                  addd        VarOperand2
+
+OperateOnInput_Calculate_Add_Output
+                  ; Now load the output onto the OutputQueue
+                  pshd
+                  ldab        #'='
+                  stab        1,y+
+                  ; check if we need to put a negative to the scree 
+                  brclr       NegativeFlag,1,OperateOnInput_Calculate_Add_Output_NoNegative
+                  ldab        #'-'
+                  stab        1,y+
+OperateOnInput_Calculate_Add_Output_NoNegative
+                  puld
+                  pshy 
                   jsr         CvrtBinToASCIIDec
-                  pshb                          ; Oneth place
-                  pshx                          ; Tenth place
-                  pshy                          ; Hundreth place
-                  ; Load the Hundreth place onto the OutputQueue
+                  pshb
+                  psha
+                  pshx
+                  tfr         y,d 
+                  ; load the address the position of the output queue back out 
+                  ldx         4,sp 
+                  ; Test if it is zero. We don't need to print zeros
+                  cmpb        #$30
+                  beq         OperateOnInput_Calculate_Add_Thoundsandth
+                  stab        1,x+
+                  puld 
+                  staa        1,x+
+                  stab        1,x+
                   puld
-                  ldy         #OutputQueue
-                  stab        14,y 
-                  ; Load the Tenth Place 
+                  staa        1,x+
+                  stab        1,x+
                   puld
-                  stab        15,y 
-                  ; Load the oneth place 
-                  pulb 
-                  stab        16,y 
-
-
-                  ;ldx         #OutputQueue       ; print the output message
-                  ;jsr         printmsg
-                  ;ldaa        #CR               ; cursor to next line
-                  ;jsr         putchar
-                  ;ldaa        #LF               ; cursor to next line
-                  ;jsr         putchar
-
-                  jsr         ClearOutputQueue
                   lbra         OperateOnInput_ResetAfterCR
-                        ;     else if ((only 2 in queue) && Last 2 chars == 'F1')
-OperateOnInput_WTest
-                  ldaa        x 
-                  cmpa        #'W'              ; Hex for 'W'
-                  lbne         OperateOnInput_QUITTest
 
-                  ; Ensuring that the OutputQueue = "$XXXX = $"
-                  ldy         #OutputQueue
-                  ldaa        #DOLLAR           ; Write a $ to the OutputQueue
-                  staa        y
-                  ldd         1,x               ; Write the ascii address of the input back on the screen
-                  std         1,y
-                  ldd         3,x   
-                  std         3,y     
-                  ldaa        #SPACE 
-                  staa        5,y 
-                  ldaa        #EQUAL 
-                  staa        6,y
-                  ldaa        #SPACE 
-                  staa        7,y 
-                  ldaa        #DOLLAR 
-                  staa        8,y 
-
-                  ; Now we need to add the output messages
-                  ldy         #MsgQueue 
-                  ldx         1,y               ; Parameter: The larger half needs to go on RegX
-                  ldd         3,y               ; Parameter: the smaller half needs to go on regD
-                  jsr         CvrtASCIIHexStringToBin
-                  jsr         ConcatinateDnX
-
-                  pshd                          ; Push this address as we will need again later on
-
-
-                  ; check if the 7th charcter is $ or not
-                  ldy         #MsgQueue 
-                  ldab        6,y 
-                  cmpb        #DOLLAR
-                  bne         OperateOnInput_WTest_Decimal
-
-OperateOnInput_WTest_Hex
-                  ; Now we know that the input value is hex, we need to conver this to binary
-                  ; Test if only one digit was supplied
-                  ldab        8,y               
-                  cmpb        #0
-                  bne         OperateOnInput_WTest_Hex_Second
-                  ldaa        #$30
-                  ldab        7,y
-                  bra         OperateOnInput_WTest_Hex_Combine
-
-OperateOnInput_WTest_Hex_Second
-                  ldd         7,y
-
-OperateOnInput_WTest_Hex_Combine
-                  ldx         #0 
-                  jsr         CvrtASCIIHexStringToBin
-                  jsr         ConcatinateDnX
-                  pshb               
-                  bra         OperateOnInput_WTest_Combine
-
-
-OperateOnInput_WTest_Decimal
-                  ; Now we know that the input value is decimal, we need to conver this to binary
-                  ldy         #MsgQueue
-
-                  ; Test if only one digit was supplied
-                  ldab         7,y               
-                  cmpb        #0
-                  bne         OperateOnInput_WTest_Decimal_hundred
-                  ldx         #$3030
-                  ldab        6,y
-                  bra         OperateOnInput_WTest_Decimal_Combine
-
-                  ; Test if only two digit was supplied
-OperateOnInput_WTest_Decimal_hundred
-                  ldab         8,y               
-                  cmpb        #0
-                  bne         OperateOnInput_WTest_Decimal_AllDigits
-                  ldab        6,y 
-                  ldaa        #$30
-                  tfr         d,x
-                  ldab        7,y
-                  bra         OperateOnInput_WTest_Decimal_Combine
-
-                  ; All blocks are valid so load everything
-OperateOnInput_WTest_Decimal_AllDigits
-
-                  ldx         6,y                     ; Parameter: the larger 2 blocks
-                  ldab        8,y                     ; Parameter: The last block
-                  jsr         OperateOnInput_WTest_Decimal_Combine
-
-OperateOnInput_WTest_Decimal_Combine
-
-                  jsr         CvrtASCIIDecStringToBin
-                  pshb               
-
-
-OperateOnInput_WTest_Combine
-                  ; At this point, the address of the user's input is stored in 1,sp 
-                  ; and the value for the address is stored in sp 
-
-                  ; Store value of the user input in the destination that he/she had specifes 
-                  ldx         1,sp 
-                  stab        0,x 
-
-                  ; Convert the binary value of the user input into ascii hex
-                  jsr         CvrtBinToASCIIHex
-                  ldy         #OutputQueue
-                  std         9,y
-
-                  ; Convert the binary value of the user input into decimal 
-                  pulb                          ; Pull B
-                  jsr         CvrtBinToASCIIDec
-                  pshb                          ; Oneth place
-                  pshx                          ; Tenth place
-                  pshy                          ; Hundreth place
-
-                  ; Load the Hundreth place onto the OutputQueue
-                  ldy         #OutputQueue
-                  ldaa        #SPACE 
-                  staa        11,y 
-                  ldaa        #SPACE 
-                  staa        12,y
-                  ldaa        #SPACE 
-                  staa        13,y 
-
+OperateOnInput_Calculate_Add_Thoundsandth
+                  puld        
+                  cmpa        #$30
+                  beq         OperateOnInput_Calculate_Add_Hundreth
+                  staa        1,x+
+                  stab        1,x+
                   puld
-                  stab        14,y 
-                  ; Load the Tenth Place 
+                  staa        1,x+
+                  stab        1,x+
                   puld
-                  stab        15,y 
-                  ; Load the oneth place 
-                  pulb 
-                  stab        16,y 
+                  lbra         OperateOnInput_ResetAfterCR
 
+OperateOnInput_Calculate_Add_Hundreth 
+                  cmpb        #$30
+                  beq         OperateOnInput_Calculate_Add_Tenth
+                  stab        1,x+
+                  puld
+                  staa        1,x+
+                  stab        1,x+
+                  puld
+                  lbra         OperateOnInput_ResetAfterCR
+
+OperateOnInput_Calculate_Add_Tenth
+                  puld        
+                  cmpa        #$30
+                  beq         OperateOnInput_Calculate_Add_Oneth
+                  staa        1,x+
+                  stab        1,x+
+                  puld
+                  lbra        OperateOnInput_ResetAfterCR
+
+OperateOnInput_Calculate_Add_Oneth       
+                  stab        1,x+
+                  puld 
+
+                  lbra         OperateOnInput_ResetAfterCR
+
+
+OperateOnInput_Calculate_Sub
+                  ldaa        #'-'
+                  cmpa        Operator 
+                  bne         OperateOnInput_Calculate_Mult
+
+                  ldd         VarOperand1
+                  subd        VarOperand2
+                  bge         OperateOnInput_Calculate_Add_Output
+
+                  pshd  
+                  ldaa        #1
+                  staa        NegativeFlag
+                  puld 
+                  eora        #$ff 
+                  eorb        #$ff 
+                  addd        #1
+                  std         VarOperand2
+                  ldd         VarOperand2
+
+                  lbra         OperateOnInput_Calculate_Add_Output
+
+
+
+OperateOnInput_Calculate_Mult
+                  ldaa        #'*'
+                  cmpa        Operator 
+                  bne         OperateOnInput_Calculate_Div
+
+                  pshy
+                  ldd         VarOperand1
+                  ldy         VarOperand2
+                  emul
+                  ; Check if the upper half is zero 
+                  cpy         #0
+                  bne         OperateOnInput_Calculate_Mult_Overflow
+                  cpd         #$7fff
+                  bgt         OperateOnInput_Calculate_Mult_Overflow
+                  puly
+                  std         VarOperand2
+
+                  lbra         OperateOnInput_Calculate_Add_Output
+
+OperateOnInput_Calculate_Mult_Overflow
+                  puly
+                  ldaa        #1
+                  staa        TypeOfErrorFlag
+                  lbra        OperateOnInput_InvalidInput
+
+OperateOnInput_Calculate_Div
+                  pshx
+                  ldd         VarOperand1
+                  ldx         VarOperand2
+                  idiv
+                  tfr         x,d
+                  pulx
+                  std         VarOperand2
+
+                  lbra         OperateOnInput_Calculate_Add_Output
+
+
+OperateOnInput_InvalidInput   
+                  pshx
+                  ; Load the output queue with everything minus the result 
+                  ldx         #MsgQueue 
+                  ; message queue needs to be the queue address + 7 
+                  ldd         #OutputQueue
+                  addd        #7
+                  tfr         d,y
+
+OperateOnInput_InvalidInput_QueueLoop
+                  ldab        1,x+ 
+                  stab        1,y+
+                  tfr         x,d 
+                  subd        sp 
+                  lbls         OperateOnInput_InvalidInput_QueueLoop
                   pulx
 
-
-                  ;ldx         #OutputQueue       ; print the output message
+                  ; Printing the OutputQueue
+                  ldx         #OutputQueue        
                   ;jsr         printmsg
-                  ;ldaa        #CR               ; cursor to next line
+                  ldaa        #CR 
                   ;jsr         putchar
-                  ;ldaa        #LF               ; cursor to next line
+                  ldaa        #LF 
                   ;jsr         putchar
 
-                  jsr         ClearOutputQueue
+                  brset       TypeOfErrorFlag,1,OperateOnInput_InvalidInput_Overflow
+                  ; Print the InvalidFormat string
+                  ldx         #InvalidFormat 
+                  ;jsr         printmsg
 
+                  lbra        OperateOnInput_ResetAfterCR_Ecalc
+                  ;
+OperateOnInput_InvalidInput_Overflow
+                  ;Print the overflow string 
+                  ldx         #OverflowError 
+                  ;jsr         printmsg
 
+                  lbra        OperateOnInput_ResetAfterCR_Ecalc
 
-                  lbra         OperateOnInput_ResetAfterCR
-                        ;     else if (Last 2 chars == "QU")
-
-                        ;     else
-OperateOnInput_QUITTest
-                  ldd         x 
-                  cpd         #$5155            ; Hex for 'QU'
-                  lbne         OperateOnInput_NoValidInput
-                        ;           if (The previous 2 chars == "IT")
-                  ldd         2,x
-                  cpd         #$4954            ; Hex for 'IT'
-                  lbne         OperateOnInput_NoValidInput
-                        ;                 set the flag for the typewriter program
-                  ldaa        #$01
-                  staa        FlgTypeWrite
-                  lbra         OperateOnInput_ResetAfterCR
 
 OperateOnInput_ResetAfterCR                     ; clearing MsgQueue and MsgQueuePointer
-                  ldx         #MsgQueue
-                  ldaa        #$00
-                  staa        1,x+
-                  staa        1,x+
-                  staa        1,x+
-                  staa        1,x+
-                  staa        1,x+
-                  staa        1,x+
-                  staa        1,x+
-                  staa        1,x+
-                  staa        1,x+
+                  
+                  ; Printing the OutputQueue
+                  ldx         #OutputQueue        
+                  ;jsr         printmsg
+                  ldaa        #CR 
+                  ;jsr         putchar
+                  ldaa        #LF 
+                  ;jsr         putchar
+
+OperateOnInput_ResetAfterCR_Ecalc
+
+                  ; Print the Ecalc> on the screen 
+                  ldx         #Ecalc 
+                  ;jsr         printmsg
+
+                  ; Clearing the MsgQueue
+                  ldd         #MsgQueue
+                  addd        #15
+                  pshd
+                  
+                  ldy         #MsgQueue
+
+OperateOnInput_ResetAfterCR_MsgQueueLoop
+                  ldab        #0 
+                  stab        1,y+
+                  tfr         y,d 
+                  subd        sp 
+                  lbls         OperateOnInput_ResetAfterCR_MsgQueueLoop
+                  puld
+
+                  ; Clearing the OutputQueue
+                  ldd         #OutputQueue
+                  addd        #22
+                  pshd
+                  ; message queue needs to be the queue address + 7 
+                  ldd         #OutputQueue
+                  addd        #7
+                  tfr         d,y
+
+OperateOnInput_ResetAfterCR_OutputQueueLoop
+                  ldab        #0 
+                  stab        1,y+
+                  tfr         y,d 
+                  subd        sp 
+                  lbls        OperateOnInput_ResetAfterCR_OutputQueueLoop
+                  puld
+   
                   ldd         #MsgQueue
                   std         MsgQueuePointer 
+                  ldd         #0
+                  std         VarOperand1
+                  std         VarOperand2
+                  staa        Operator 
+                  staa        TypeOfErrorFlag
+                  staa        NegativeFlag
                   bra         OperateOnInput_EndOfSR
 
 OperateOnInput_NotEqualCR
 
-                        ;     if (RegA > 96)                // Checking if it a lowercase
-                  ldaa        sp
-                  cmpa        #96
-                  bls         OperateOnInput_NotAChar
-                        ;           if (RegA < 123)
-                  cmpa        #123
-                  bhs         OperateOnInput_NotAChar
-                        ;                 RegA = RegA - 32  // Converting to uppercase
-                  suba        #32
-                  ;           store RegA and increment pointer
-OperateOnInput_NotAChar
                   ldx         MsgQueuePointer
                   staa        x
                   inx 
                   stx         MsgQueuePointer
-                  lbra         OperateOnInput_EndOfSR  
+                  lbra        OperateOnInput_EndOfSR  
                   ;     else 
 
-
-OperateOnInput_NoValidInput 
-                  ldx         #MsgInvalidInput
-                  jsr         printmsg
-                  ldaa        #CR               ; move the cursor to beginning of the line
-                  jsr         putchar           ;   Cariage Return/Enter key
-                  ldaa        #LF               ; move the cursor to next line, Line Feed
-                  jsr         putchar
-                  lbra         OperateOnInput_ResetAfterCR
                   
                   ; return from subroutine   
 OperateOnInput_EndOfSR  
@@ -562,34 +500,218 @@ OperateOnInput_EndOfSR
 
 
 
-; This subroutine is used to clear the OutputQueue
-ClearOutputQueue
-                  pshx
-                  psha
-                  ldx         #OutputQueue
-                  ldaa        #$00
-                  staa        1,x+
-                  staa        1,x+
-                  staa        1,x+
-                  staa        1,x+
-                  staa        1,x+
-                  staa        1,x+
-                  staa        1,x+
-                  staa        1,x+
-                  staa        1,x+
-                  staa        1,x+
-                  staa        1,x+
-                  staa        1,x+
-                  staa        1,x+
-                  staa        1,x+
-                  staa        1,x+
-                  staa        1,x+
-                  staa        1,x+
-                  pula
-                  pulx
-                  rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+; Inputs: 
+;           REgX : The address of the queue of ASCII char that the function should operate on 
+;           RegA : Flags registers
+;                 - 1st bit = First operand state
+;                 - 2nd bit = Operator State 
+;                 - 3nd bit = Second operator State
+; Outputs:
+;           RegY : The result of the operation. 16 bit number if it was in operator1 or operator1 state
+;                       - The value of the ASCII char - $30 if it is an operator
+;           RegA : Flag registers 
+;                 - 1st bit  = The result was successful that that the program should move onto the next state 
+;           RegX : 
+;                 - This points to the address of the invalid char if the result was invalid 
+;                 - This points to the address of the last conversion
+CalculatorConverter
+                  pshx
+                  psha
+                  ; Check if we are on 1st operand state
+                  cmpa        #2
+                  lbeq         CalculatorConverter_Opter
+                  cmpa        #4
+                  lbeq         CalculatorConverter_Opnd2
+CalculatorConverter_Opnd1
+                  ldab        x
+                  jsr         CvrtASCIIDecToBin
+                  ; check if the operand is valid or not 
+                  cmpb        #$FF 
+                  beq         CalculatorConverter_Opnd1_test
+
+                  ; Test if this is the 100th place. If so multiply by 100 and add to y
+                  pshb  
+                  tfr         x,d
+                  subd        2,sp
+                  bne         CalculatorConverter_Opnd1_10th
+                  ldaa        #100
+                  pulb
+                  mul 
+                  addd        VarOperand1
+                  std         VarOperand1
+                  inx         
+                  bra         CalculatorConverter_Opnd1
+CalculatorConverter_Opnd1_10th
+                  cpd         #1
+                  bne         CalculatorConverter_Opnd1_1th
+                  ldaa        #10
+                  pulb
+                  mul 
+                  addd        VarOperand1
+                  std         VarOperand1
+                  inx         
+                  bra         CalculatorConverter_Opnd1
+CalculatorConverter_Opnd1_1th
+                  pulb
+                  clra        
+                  addd        VarOperand1
+                  std         VarOperand1
+                  inx         
+                  lbra         CalculatorConverter_Done
+
+
+CalculatorConverter_Opnd1_test    
+                  ; if Operand1 is 0 than this means that this is an invalid input
+                  ; If Operand1 != 0 then this must means that this is an operator 
+                  ldd         VarOperand1
+                  cpd         #0
+                  lbeq         CalculatorConverter_Invalid
+
+                  tfr         x,d
+                  subd        1,sp
+                  cpd         #2
+                  beq         CalculatorConverter_Opnd1_test_div10th
+                  cpd         #1
+                  beq         CalculatorConverter_Opnd1_test_div100th
+
+                  lbra         CalculatorConverter_Done
+CalculatorConverter_Opnd1_test_div10th
+                  pshx 
+                  ldd         VarOperand1 
+                  ldx         #10
+                  idiv
+                  stx         VarOperand1
+                  pulx 
+                  lbra         CalculatorConverter_Done
+CalculatorConverter_Opnd1_test_div100th
+                  pshx 
+                  ldd         VarOperand1 
+                  ldx         #100
+                  idiv
+                  stx         VarOperand1
+                  pulx 
+                  lbra         CalculatorConverter_Done
+
+
+
+CalculatorConverter_Opter
+                  ldab        x 
+                  cmpb        #'+'
+                  beq         CalculatorConverter_Opter_Valid
+                  cmpb        #'-'
+                  beq         CalculatorConverter_Opter_Valid
+                  cmpb        #'*'
+                  beq         CalculatorConverter_Opter_Valid
+                  cmpb        #'/'
+                  beq         CalculatorConverter_Opter_Valid
+                  bra         CalculatorConverter_Invalid
+CalculatorConverter_Opter_Valid
+                  stab        Operator
+                  inx
+                  bra         CalculatorConverter_Done
+
+
+CalculatorConverter_Opnd2
+                  ldab        x
+                  jsr         CvrtASCIIDecToBin
+                  ; check if the operand is valid or not 
+                  cmpb        #$FF 
+                  beq         CalculatorConverter_Opnd2_test
+
+                  ; Test if this is the 100th place. If so multiply by 100 and add to y
+                  pshb  
+                  tfr         x,d
+                  subd        2,sp
+                  bne         CalculatorConverter_Opnd2_10th
+                  ldaa        #100
+                  pulb
+                  mul 
+                  addd        VarOperand2
+                  std         VarOperand2
+                  inx         
+                  bra         CalculatorConverter_Opnd2
+CalculatorConverter_Opnd2_10th
+                  cpd         #1
+                  bne         CalculatorConverter_Opnd2_1th
+                  ldaa        #10
+                  pulb
+                  mul 
+                  addd        VarOperand2
+                  std         VarOperand2
+                  inx         
+                  bra         CalculatorConverter_Opnd2
+CalculatorConverter_Opnd2_1th
+                  pulb
+                  clra        
+                  addd        VarOperand2
+                  std         VarOperand2
+                  inx         
+                  bra         CalculatorConverter_Done
+
+CalculatorConverter_Opnd2_test
+                  ; if Operand2 is 0 than this means that this is an invalid input
+                  ; If Operand2 != 0 then this must means that this is an operator 
+                  ldd         VarOperand2
+                  cpd         #0
+                  lbeq         CalculatorConverter_Invalid
+
+
+                  tfr         x,d
+                  subd        1,sp
+                  cpd         #2
+                  beq         CalculatorConverter_Opnd2_test_div10th
+                  cpd         #1
+                  beq         CalculatorConverter_Opnd2_test_div100th
+
+                  bra         CalculatorConverter_Done
+CalculatorConverter_Opnd2_test_div10th
+                  pshx 
+                  ldd         VarOperand2 
+                  ldx         #10
+                  idiv
+                  stx         VarOperand2
+                  pulx 
+                  bra         CalculatorConverter_Done
+CalculatorConverter_Opnd2_test_div100th
+                  pshx 
+                  ldd         VarOperand2 
+                  ldx         #100
+                  idiv
+                  stx         VarOperand2
+                  pulx 
+                  bra         CalculatorConverter_Done
+
+
+
+
+CalculatorConverter_Invalid
+                  ldaa        #0
+                  ldab        3,sp+
+                  rts
+
+CalculatorConverter_Done
+                  ldaa        #1
+                  ldab        3,sp+
+                  rts 
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Input:    RegB: The ascii Dec 
+; Output:   RegB: The binary output of the decimal or 0xFF if the result is not
+CvrtASCIIDecToBin 
+                  subb        #$30
+                  ; Test if the answer is greater than or equal to 10
+                  cmpb        #10
+                  bhs         CvrtASCIIDecToBin_NotBin
+                  rts 
+CvrtASCIIDecToBin_NotBin
+                  ldab        #$FF
+                  rts 
 
 ; Inputs: Top 2 block in RegX and the last block in RegB
 ; Output: The binary representation on RegB
@@ -624,29 +746,53 @@ CvrtASCIIDecStringToBin
 
                   rts
 
-; Result = Regb(oneth place), RegX(Tenth place), RegY(Hundreth place)
+; Result = Regb(oneth place), RegA(tenth place), RegX(hundreth place), RegY(thousandth place)
 CvrtBinToASCIIDec
-                  ; Get the value for the Hundreth place
-                  clra         
+                  ; Get the value for the ten thousandth place        
+                  ldx         #10000
+                  idiv
+                  pshd
+                  ldab        #$30
+                  abx
+                  puld
+                  pshx
+                  ; Get the value for the thousandth place 
+                  ldx         #1000
+                  idiv
+                  pshd
+                  ldab        #$30
+                  abx
+                  puld
+                  pshx
+                  ; Get the value for the Hundreth place 
                   ldx         #100
                   idiv
-                  pshb
+                  pshd
                   ldab        #$30
                   abx
-                  pulb
+                  puld
                   pshx
-                  ; Get the value for the Tenth place 
+                  ; Get the value for the tenth place 
                   ldx         #10
                   idiv
-                  pshb
+                  pshd
                   ldab        #$30
                   abx
-                  pulb
+                  puld
                   pshx
                   ; Get the value for the oneth place
                   addb        #$30
-                  pulx
-                  puly        
+                  pulx 
+                  tfr         x,a 
+                  pshd
+                  ldd         2,sp 
+                  ldx         4,sp
+                  tfr         x,a
+                  tfr         d,x
+                  puld
+                  puly   
+                  puly     
+                  puly
                   rts 
 
 ; Input: Higher 2 bytes in RegX, Lower 2 bytes in RegD
@@ -1050,10 +1196,12 @@ delay_10US_LOOP
 ; of the RAM.  RAM ends at $3FFF
 ; in MC9S12C128 chip
 
-MsgIntro1         dc.b        'Welcome! The followings are the commands for the program',CR,LF,'L1 = Fade LED1 up,  F1 = Fade LED1 down,  L2 = LED2 ON',CR,LF,NULL
-MsgIntro2         dc.b        'F2 = LED2 OFF, L4 = LED4 ON,  F4 = LED4 OFF',CR,LF,NULL
+MsgIntro1         dc.b        'Welcome! The followings are the commands for the program',CR,LF,'L2 = LED2 ON, F2 = LED2 OFF, L4 = LED4 ON,  F4 = LED4 OFF',CR,LF,NULL
+MsgIntro2         dc.b        'S#### to read to a register and W#### ### to write to a register ',CR,LF,NULL
 MsgIntro3         dc.b        'QUIT = enable the program to enter typewriter mode.',CR,LF,NULL
-
+InvalidFormat     dc.b        '       Invalid input format',CR,LF,NULL
+Ecalc             dc.b        'Ecalc> ',NULL
+OverflowError     dc.b        '       Overflow error',CR,LF,NULL 
                   END               ; this is end of assembly source file
                               ; lines below are ignored - not assembled/compiled
 

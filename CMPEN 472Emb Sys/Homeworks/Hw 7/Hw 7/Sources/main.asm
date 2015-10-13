@@ -100,6 +100,7 @@ VarOperand1       dc.w        $00
 VarOperand2       dc.w        $00
 Operator          dc.b        $00
 TypeOfErrorFlag   dc.b        $00               ; 0 = InvalidFormat , 1 = Overflow
+NegativeFlag      dc.b        $00               ; If one then should put a negative sign onto the screen
 
 
 StackSP                                         ; remaining memory space for stack data
@@ -121,28 +122,29 @@ pgstart           lds         #pgstart          ; initialize the stack pointer
                   staa        PORTB    
 
 
+                  ldx         #MsgIntro1        ; Print the introduction messages
+                  jsr         printmsg
+                  
+                  ldx         #MsgIntro2        
+                  jsr         printmsg
 
+                  ldx         #MsgIntro3        
+                  jsr         printmsg
 
+                  ldx         #Ecalc        
+                  jsr         printmsg
 
                   ldd         #MsgQueue         ; initialize the MsgQueuePointer to the address of the MsgQueue
                   std         MsgQueuePointer
+
 loop 
-                  ldaa        #'7'
-                  jsr         OperateOnInput
-                  ldaa        #'h'
-                  jsr         OperateOnInput
-                  ldaa        #'6'
-                  jsr         OperateOnInput
-                  ldaa        #'*'
-                  jsr         OperateOnInput
-                  ldaa        #'1'
-                  jsr         OperateOnInput
-                  ;ldaa        #'7'
-                  ;jsr         OperateOnInput
-                  ;ldaa        #'2'
-                  ;jsr         OperateOnInput
-                  ldaa        #CR
-                  jsr         OperateOnInput
+                  jsr         getchar           ; type writer - check the key board
+                  cmpa        #$00              ;  if nothing typed, keep checking
+                  beq         loop
+
+                  jsr         putchar           ; is displayed on the terminal window
+                  jsr         OperateOnInput    ; This is where we perform the majority of the program
+                  Bra         loop
 
                   
 
@@ -188,19 +190,8 @@ OperateOnInput
 
                   ; Moving the cursor to the next line
                   ldaa        #LF               ; cursor to next line
-                  
-
-
-
-
-                  ;jsr         putchar
-
-
-
-
-
-
-
+            
+                  jsr         putchar
 
                   ; Get Operand1 
                   ldx         #MsgQueue 
@@ -226,8 +217,7 @@ OperateOnInput
                   tfr         x,d 
                   subd        MsgQueuePointer
                   beq         OperateOnInput_Calculate
-                  inx         
-                  jsr         OperateOnInput_InvalidInput
+                  lbra        OperateOnInput_InvalidInput
 
 OperateOnInput_Calculate
                   ; Load the output queue with everything minus the result 
@@ -259,6 +249,11 @@ OperateOnInput_Calculate_Add_Output
                   pshd
                   ldab        #'='
                   stab        1,y+
+                  ; check if we need to put a negative to the scree 
+                  brclr       NegativeFlag,1,OperateOnInput_Calculate_Add_Output_NoNegative
+                  ldab        #'-'
+                  stab        1,y+
+OperateOnInput_Calculate_Add_Output_NoNegative
                   puld
                   pshy 
                   jsr         CvrtBinToASCIIDec
@@ -272,23 +267,45 @@ OperateOnInput_Calculate_Add_Output
                   cmpb        #$30
                   beq         OperateOnInput_Calculate_Add_Thoundsandth
                   stab        1,x+
+                  puld 
+                  staa        1,x+
+                  stab        1,x+
+                  puld
+                  staa        1,x+
+                  stab        1,x+
+                  puld
+                  lbra         OperateOnInput_ResetAfterCR
 
 OperateOnInput_Calculate_Add_Thoundsandth
                   puld        
                   cmpa        #$30
                   beq         OperateOnInput_Calculate_Add_Hundreth
                   staa        1,x+
+                  stab        1,x+
+                  puld
+                  staa        1,x+
+                  stab        1,x+
+                  puld
+                  lbra         OperateOnInput_ResetAfterCR
 
 OperateOnInput_Calculate_Add_Hundreth 
                   cmpb        #$30
                   beq         OperateOnInput_Calculate_Add_Tenth
                   stab        1,x+
+                  puld
+                  staa        1,x+
+                  stab        1,x+
+                  puld
+                  lbra         OperateOnInput_ResetAfterCR
 
 OperateOnInput_Calculate_Add_Tenth
                   puld        
                   cmpa        #$30
-                  beq         OperateOnInput_Calculate_Add_Hundreth
+                  beq         OperateOnInput_Calculate_Add_Oneth
                   staa        1,x+
+                  stab        1,x+
+                  puld
+                  lbra        OperateOnInput_ResetAfterCR
 
 OperateOnInput_Calculate_Add_Oneth       
                   stab        1,x+
@@ -307,8 +324,8 @@ OperateOnInput_Calculate_Sub
                   bge         OperateOnInput_Calculate_Add_Output
 
                   pshd  
-                  ldaa        #'-'
-                  staa        1,y+
+                  ldaa        #1
+                  staa        NegativeFlag
                   puld 
                   eora        #$ff 
                   eorb        #$ff 
@@ -316,7 +333,7 @@ OperateOnInput_Calculate_Sub
                   std         VarOperand2
                   ldd         VarOperand2
 
-                  bra         OperateOnInput_Calculate_Add_Output
+                  lbra         OperateOnInput_Calculate_Add_Output
 
 
 
@@ -337,9 +354,10 @@ OperateOnInput_Calculate_Mult
                   puly
                   std         VarOperand2
 
-                  bra         OperateOnInput_Calculate_Add_Output
+                  lbra         OperateOnInput_Calculate_Add_Output
 
 OperateOnInput_Calculate_Mult_Overflow
+                  puly
                   ldaa        #1
                   staa        TypeOfErrorFlag
                   lbra        OperateOnInput_InvalidInput
@@ -373,22 +391,45 @@ OperateOnInput_InvalidInput_QueueLoop
                   lbls         OperateOnInput_InvalidInput_QueueLoop
                   pulx
 
+                  ; Printing the OutputQueue
+                  ldx         #OutputQueue        
+                  jsr         printmsg
+                  ldaa        #CR 
+                  jsr         putchar
+                  ldaa        #LF 
+                  jsr         putchar
+
                   brset       TypeOfErrorFlag,1,OperateOnInput_InvalidInput_Overflow
-                  ;
                   ; Print the InvalidFormat string
-                  ;
-                  lbra        OperateOnInput_ResetAfterCR
+                  ldx         #InvalidFormat 
+                  jsr         printmsg
+
+                  lbra        OperateOnInput_ResetAfterCR_Ecalc
                   ;
 OperateOnInput_InvalidInput_Overflow
-                  ;
-                  ;     
                   ;Print the overflow string 
-                  ;
+                  ldx         #OverflowError 
+                  jsr         printmsg
 
-                  lbra        OperateOnInput_ResetAfterCR
+                  lbra        OperateOnInput_ResetAfterCR_Ecalc
 
 
 OperateOnInput_ResetAfterCR                     ; clearing MsgQueue and MsgQueuePointer
+                  
+                  ; Printing the OutputQueue
+                  ldx         #OutputQueue        
+                  jsr         printmsg
+                  ldaa        #CR 
+                  jsr         putchar
+                  ldaa        #LF 
+                  jsr         putchar
+
+OperateOnInput_ResetAfterCR_Ecalc
+
+                  ; Print the Ecalc> on the screen 
+                  ldx         #Ecalc 
+                  jsr         printmsg
+
                   ; Clearing the MsgQueue
                   ldd         #MsgQueue
                   addd        #15
@@ -428,21 +469,11 @@ OperateOnInput_ResetAfterCR_OutputQueueLoop
                   std         VarOperand2
                   staa        Operator 
                   staa        TypeOfErrorFlag
+                  staa        NegativeFlag
                   bra         OperateOnInput_EndOfSR
 
 OperateOnInput_NotEqualCR
 
-                        ;     if (RegA > 96)                // Checking if it a lowercase
-                  ldaa        sp
-                  cmpa        #96
-                  bls         OperateOnInput_NotAChar
-                        ;           if (RegA < 123)
-                  cmpa        #123
-                  bhs         OperateOnInput_NotAChar
-                        ;                 RegA = RegA - 32  // Converting to uppercase
-                  suba        #32
-                  ;           store RegA and increment pointer
-OperateOnInput_NotAChar
                   ldx         MsgQueuePointer
                   staa        x
                   inx 
@@ -1158,7 +1189,9 @@ delay_10US_LOOP
 MsgIntro1         dc.b        'Welcome! The followings are the commands for the program',CR,LF,'L2 = LED2 ON, F2 = LED2 OFF, L4 = LED4 ON,  F4 = LED4 OFF',CR,LF,NULL
 MsgIntro2         dc.b        'S#### to read to a register and W#### ### to write to a register ',CR,LF,NULL
 MsgIntro3         dc.b        'QUIT = enable the program to enter typewriter mode.',CR,LF,NULL
-InvalidFormat     dc.b        'Invalid input format',CR,LF,NULL
+InvalidFormat     dc.b        '       Invalid input format',CR,LF,NULL
+Ecalc             dc.b        'Ecalc> ',NULL
+OverflowError     dc.b        '       Overflow error',CR,LF,NULL 
                   END               ; this is end of assembly source file
                               ; lines below are ignored - not assembled/compiled
 
