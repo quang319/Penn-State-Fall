@@ -40,13 +40,13 @@ namespace TcpTorrent
         public int NoOfEPs = 0;
         public List<string> IPAddresses = new List<string>();
         public List<int> Ports = new List<int>();
-
+        
         // Register Request
-        public void RegisterRq(IPEndPoint LocalEP, List<string> files, List<int> filesLength)
+        public void RegisterRq(string ipAddress, int port, List<string> files, List<int> filesLength)
         {
             Command = (int) Commands.RegisterRq;
-            ClientIP = LocalEP.Address.ToString();
-            ClientPort = LocalEP.Port;
+            ClientIP = ipAddress;
+            ClientPort = port;
             NoOfFiles = files.Count;
             Files = files;
             FilesLength = filesLength;
@@ -66,9 +66,10 @@ namespace TcpTorrent
         }
 
         // Leave Request
-        public void LeaveRq()
+        public void LeaveRq(string address)
         {
             Command = (int)Commands.LeaveRq;
+            ClientIP = address;
         }
 
         // Register Reply

@@ -1,18 +1,19 @@
 ﻿****************************************************************************************************************************
 *								THE FOLLOWING IS AN EXAMPLE
 ****************************************************************************************************************************
-Command >> ListUploads
+Command >> ListUploadabless
 
 The following files are available for upload
 1) Testing.txt
 2) Ironman.mp4
 3) Intro to TCP.pdf
 
-Command >> Upload-2
+Command >> Upload-1,2
 
-You have enabled Ironman.mp4 to be shared with your peers
+You have successfully registered file: Testing.txt
+You have successfully registered file: Ironman.mp4
 
-Command >> ListDownloads
+Command >> ListDownloadables
 
 The following files are available for download
 1) HelloWorld.txt

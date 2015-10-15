@@ -12,16 +12,6 @@ namespace TcpTorrent
 
         static void Main(string[] args)
         {
-            //Console.WriteLine("hit Ctrl-C to exit.");
-            //var tcpTorrent = new TcpTorrent();
-            //// start the server 
-            //var task1 = tcpTorrent.StartListener();
-            //// Start the client
-            //var task2 = tcpTorrent.ClientStart();
-
-            //DataSegmentObject Segment = new DataSegmentObject(new ClientDataObject());
-            //Segment.BreakFile(@"/Users/quang/Desktop/JetBrains.ReSharper.2015.2.web.exe");
-            //Console.ReadKey();
 
             using (var sr = new StreamReader(@"../../Intro.txt"))
             {
@@ -35,32 +25,36 @@ namespace TcpTorrent
             }
             commandPrint();
 
-            Tuple<string, int> userCommand;
+            Tuple<string, string> userCommand;
 
             var tcpServer = new TcpTorrent();
-            var serverTask = tcpServer.StartListener();
+            var serverState = new StateObject();
+            serverState.ClientType = false;
+            var serverTask = tcpServer.StartListener(serverState);
 
             StateObject clientState = new StateObject();
             clientState.Address = "127.0.0.1";
             clientState.Port = tcpServer.GetOpenPort();
 
-            List<string> availableFile = new List<string>();
-            List<int> availableFileSize = new List<int>();
 
             while (true)
             {
                 userCommand = getCommand();
                 switch(userCommand.Item1)
                 {
-                    case "LISTUPLOADS":
+                    case "LISTUPLOADABLES":
+                        // Clearing the previous file paths since we are repopulating it
+                        clientState.UploadableFilePath.Clear();
+                        clientState.UploadableFileSize.Clear();
+
                         string path = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
                         int i = 1;
                         Console.WriteLine("\nThe following files are available for download");
                         foreach (var file in Directory.GetFiles(path))
                         {
                             Console.WriteLine("{0}) {1}", i, Path.GetFileName(file));
-                            availableFile.Add(Path.GetFileName(file));
-                            availableFileSize.Add(file.Length);
+                            clientState.UploadableFilePath.Add(file);
+                            clientState.UploadableFileSize.Add(file.Length);
                             
                             i++;
                         }
@@ -68,30 +62,122 @@ namespace TcpTorrent
                         break;
 
                     case "UPLOAD":
+
+
+                        Tuple<bool, string> validCheck = IsValidInput(userCommand.Item2, clientState.UploadableFilePath.Count);
+
+                        // If any of the value in the previous loop was invalid, we need to break out of this case. 
+                        if (validCheck.Item1 == false)
+                        {
+                            Console.WriteLine(validCheck.Item2);
+                            commandPrint();
+                            break;
+                        }
+
+                        // Now what we know that the user's inputs are valid, we need to store the path of the files that the user wants to upload
+
+                        // Clearing the previous FilestoREg list because we have a new list. 
+                        clientState.FilePathsToReg.Clear();
+                        clientState.FilePathsToRegLength.Clear();
+                        foreach (string item in userCommand.Item2.Split(','))
+                        {
+                            clientState.FilePathsToReg.Add(clientState.UploadableFilePath[Convert.ToInt32(item) - 1]);
+                            clientState.FilePathsToRegLength.Add(clientState.UploadableFileSize[Convert.ToInt32(item) - 1]);
+                        }
+                             
+
                         var uploadcmd = new ClientPassableObject(clientState);
-                        uploadcmd.RegisterFiles(availableFile, availableFileSize);
+                        uploadcmd.RegisterFiles();
                         var uploadclient = new TcpTorrent();
                         var clienttask = uploadclient.ClientStart(uploadcmd);
+
+                        while (uploadcmd.DoneFlag == false) ;
+
+                        // Now that we recieved upload on which file can be uploaded, we need to split the files up into segments and store it in memory
+                        for (int j = 0; j < uploadcmd.FilesRegSuccessCount.Count; j++)
+                        {
+                            if (uploadcmd.FilesRegSuccessCount[j] == true)
+                            {
+                                StringBuilder FileSb = new StringBuilder();
+                                using (var streamRdr = new StreamReader(clientState.FilePathsToReg[j]))
+                                {
+                                    while (!streamRdr.EndOfStream)
+                                    {
+                                        FileSb.Append(streamRdr.ReadLine());
+                                    }
+                                }
+                                var DataParser = new DataSegmentObject();
+                                Tuple<string,List<string>> tupleForDict = DataParser.ChunksUpto(FileSb.ToString(),clientState.MaxChunkSize);
+                                var dictObject = new ObjectForFiledict();
+                                dictObject.Hash = tupleForDict.Item1;
+                                dictObject.Segments = tupleForDict.Item2;
+                                clientState.FileDict.Add(Path.GetFileName(clientState.FilePathsToReg[j]), dictObject);
+                            }
+                            
+                        }
+
+                        commandPrint();
+
+                        
                         break;
 
-                    case "LISTDOWNLOADS":
-                        var printCmd = new ClientPassableObject(clientState);
-                        printCmd.PrintDownloadable();
-                  
+                    case "LISTDOWNLOADABLES":
 
-                        var tcpClient = new TcpTorrent();
-                        var task = tcpClient.ClientStart(printCmd);
-                        while (!printCmd.DoneFlag)
-                        {
-                            ;
-                        }
-                        commandPrint() ;
+                        var printcmd = new ClientPassableObject(clientState);
+                        printcmd.PrintDownloadable();
+                        var printListclient = new TcpTorrent();
+                        var printTask = printListclient.ClientStart(printcmd);
+
+                        while (printcmd.DoneFlag == false) ;
+
+                        clientState.DownloadableFileName = printcmd.DownloadableFiles;
+                        clientState.DownloadableFileSize = printcmd.DownloadableFilesLength;
+                        commandPrint();
 
                         break;
 
 
                     case "DOWNLOAD":
+                        Tuple<bool, string> downloadValidCheck = IsValidInput(userCommand.Item2, clientState.DownloadableFileName.Count);
+
+                        // If any of the value in the previous loop was invalid, we need to break out of this case. 
+                        if (downloadValidCheck.Item1 == false)
+                        {
+                            Console.WriteLine(downloadValidCheck.Item2);
+                            commandPrint();
+                            break;
+                        }
+                        // We are only going to allow one file to be download at a time
+                        if (userCommand.Item2.Split(',').Length > 1)
+                        {
+                            Console.WriteLine("/nYou can only select one download file at a time");
+                            break;
+                        }
+
+                        // Clearing the previous FilestoREg list because we have a new list. 
+                        clientState.FileNameToDownload = string.Empty;
+                        clientState.FileNameToDownloadLength = 0;
+
+                        clientState.FileNameToDownload = clientState.DownloadableFileName[Convert.ToInt32(userCommand.Item2) - 1];
+                        clientState.FileNameToDownloadLength = clientState.DownloadableFileSize[Convert.ToInt32(userCommand.Item2) - 1];
+
+                        var downloadClient = new TcpTorrent();
+                        var downloadTask = downloadClient.GetDownloadFile(clientState);
                         break;
+
+                    case "LEAVE":
+                        var leaveCmd = new ClientPassableObject(clientState);
+                        leaveCmd.LeaveRequest();
+                        var leaveClient = new TcpTorrent();
+                        var leaveTask = leaveClient.ClientStart(leaveCmd);
+                        while (leaveCmd.DoneFlag == false) ;
+
+                        Console.ReadKey();
+                        Environment.Exit(0);
+
+                        break;
+
+
                     case "HELP":
                         using (var sr = new StreamReader(@"../../Intro.txt"))
                         {
@@ -100,7 +186,7 @@ namespace TcpTorrent
                         }
                         break;
                     default:
-                        Console.WriteLine("\nSorry. That was an invalid input. Please try again. \nValid Inputs are 'Listuploads','Upload-#','ListDownloads','Download-#','Help'");
+                        Console.WriteLine("\nSorry. That was an invalid input. Please try again. \nValid Inputs are 'Listuploadables','Upload-#','ListDownloadables','Download-#','Leave','Help'");
                         commandPrint();
                         break;
                 }
@@ -110,22 +196,53 @@ namespace TcpTorrent
         }
 
 
+        public static Tuple<bool,string> IsValidInput(string command, int LengthOfList)
+        {
+            if (command == "Empty")
+            {
+                return new Tuple<bool, string>(false, "\nSorry. That was an invalid input. Please try again. \nValid Inputs are 'Listuploadables','Upload-#','ListDownloadables','Download-#','Leave','Help'");
+            }
+
+            if (LengthOfList == 0)
+            {
+                return new Tuple<bool, string>(false, "You must view the files before you can select them");
+            }
+            string ItemsToUpload = command;
+            ItemsToUpload.Replace(" ", "");
+
+            // Loop through the inputs and through an invalid entry if any of the inputs is wrong
+            foreach (string item in command.Split(','))
+            {
+                // if the user input more than what was presented to them
+                if (Convert.ToInt32(item) - 1 >= LengthOfList)
+                {
+                    return new Tuple<bool, string>(false, "You have inputed an index that was larger than what was presented to you");
+                }
+                // if the user input less than what was presented to them
+                else if (Convert.ToInt32(item) - 1 < 0)
+                {
+                    return new Tuple<bool, string>(false, "You have inputed an index that was less than what was presented to you");
+                }
+            }
+            return new Tuple<bool, string>(true, "");
+        }
+
 
         public static void commandPrint()
         {
             Console.Write("\nCommand >> ");
         }
 
-        public static Tuple<string,int> getCommand()
+        public static Tuple<string,string> getCommand()
         {
             string[] userInput = Console.ReadLine().Split('-');
 
             if (userInput.Length == 2)
             {
-                return new Tuple<string, int>(userInput[0].ToUpper(), Convert.ToInt32(userInput[1]));
+                return new Tuple<string, string>(userInput[0].ToUpper(), userInput[1]);
             }
             else
-                return new Tuple<string, int>(userInput[0].ToUpper(), 0);
+                return new Tuple<string, string>(userInput[0].ToUpper(), "Empty");
 
         }
 
