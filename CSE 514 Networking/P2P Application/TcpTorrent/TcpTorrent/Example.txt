@@ -1,0 +1,30 @@
+﻿****************************************************************************************************************************
+*								THE FOLLOWING IS AN EXAMPLE
+****************************************************************************************************************************
+Command >> ListUploads
+
+The following files are available for upload
+1) Testing.txt
+2) Ironman.mp4
+3) Intro to TCP.pdf
+
+Command >> Upload-2
+
+You have enabled Ironman.mp4 to be shared with your peers
+
+Command >> ListDownloads
+
+The following files are available for download
+1) HelloWorld.txt
+2) MySourceCode.cs
+3) How to rule the world.pdf
+
+Command >> Download-3
+
+You are downloading -- How to rule the world.pdf -- 1%
+
+Command >> 
+
+****************************************************************************************************************************
+*								END EXAMPLE
+****************************************************************************************************************************

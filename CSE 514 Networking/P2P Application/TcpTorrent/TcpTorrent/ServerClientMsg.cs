@@ -23,23 +23,23 @@ namespace TcpTorrent
         public int ClientPort = 0;
 
         // Files and files lengths
-        List<string> Files = new List<string>();
-        List<int> FilesLength = new List<int>();
+        public List<string> Files = new List<string>();
+        public List<int> FilesLength = new List<int>();
 
         // Name of files and # of files
-        int NoOfFiles = 0;
-        string NameOfFile = string.Empty;
+        public int NoOfFiles = 0;
+        public string NameOfFile = string.Empty;
 
         // List to let the client know if each of the files it tried to register was successful or not
-        List<bool> SuccessCount = new List<bool>();
+        public List<bool> SuccessCount = new List<bool>();
 
         // Size of the file
-        int SizeOfFile = 0;
+        public int SizeOfFile = 0;
 
         // Remote EPs
-        int NoOfEPs = 0;
-        List<string> IPAddresses = new List<string>();
-        List<int> Ports = new List<int>();
+        public int NoOfEPs = 0;
+        public List<string> IPAddresses = new List<string>();
+        public List<int> Ports = new List<int>();
 
         // Register Request
         public void RegisterRq(IPEndPoint LocalEP, List<string> files, List<int> filesLength)
@@ -71,8 +71,8 @@ namespace TcpTorrent
             Command = (int)Commands.LeaveRq;
         }
 
-        // File List Replay
-        public void FileListRly (List<bool> success)
+        // Register Reply
+        public void RegisterRly (List<bool> success)
         {
             Command = (int)Commands.RegisterRly;
             SuccessCount = success;

@@ -6,13 +6,9 @@ using System.Threading.Tasks;
 
 namespace TcpTorrent
 {
-    interface IServerClientMsg
+    public class StateObject
     {
-        string Command
-        {
-            get; set;
-        }
-
-
+        public string Address = string.Empty;
+        public int Port = 0;
     }
 }
