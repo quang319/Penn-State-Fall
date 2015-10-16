@@ -161,6 +161,8 @@ namespace TcpTorrent
             var MsgObjectToReturn = new ServerClientMsg();
             switch (ReceivedMsgObject.Command)
             {
+
+
                 // If we received a Register Files message from the client
                 case (int)ServerClientMsg.Commands.RegisterRq:
                     List<bool> SuccessList = new List<bool>();
@@ -183,8 +185,19 @@ namespace TcpTorrent
                                 if (pair.Key == ReceivedMsgObject.Files[i])
                                 {
                                     ServerDataObject ServObj = pair.Value;
-                                    ServObj.AddEndPoint(ReceivedMsgObject.ClientIP, ReceivedMsgObject.ClientPort);
-                                    successflag = true;
+                                    for (int k =0; k < ServObj.Addresses.Count; k++)
+                                    {
+                                        if (ServObj.Ports[k] == ReceivedMsgObject.ClientPort)
+                                        {
+                                            if (ServObj.Addresses[k] == ReceivedMsgObject.ClientIP)
+                                                successflag = false;
+                                        }
+                                        else
+                                        {
+                                            ServObj.AddEndPoint(ReceivedMsgObject.ClientIP, ReceivedMsgObject.ClientPort);
+                                            successflag = true;
+                                        }
+                                    }
                                 }
                             }
 

@@ -27,10 +27,10 @@ namespace TcpTorrent
 
             Tuple<string, string> userCommand;
 
-            //var tcpServer = new TcpTorrent();
-            //var serverState = new StateObject();
-            //serverState.ClientType = false;
-            //var serverTask = tcpServer.StartListener(serverState);
+            var tcpServer = new TcpTorrent();
+            var serverState = new StateObject();
+            serverState.ClientType = false;
+            var serverTask = tcpServer.StartListener(serverState);
 
             StateObject clientState = new StateObject();
             clientState.Address = "127.0.0.1";
@@ -112,7 +112,11 @@ namespace TcpTorrent
                                 var dictObject = new ObjectForFiledict();
                                 dictObject.Hash = tupleForDict.Item1;
                                 dictObject.Segments = tupleForDict.Item2;
-                                clientState.FileDict.Add(Path.GetFileName(clientState.FilePathsToReg[j]), dictObject);
+                                if (!clientState.FileDict.ContainsKey(Path.GetFileName(clientState.FilePathsToReg[j])))
+                                {
+                                    clientState.FileDict.Add(Path.GetFileName(clientState.FilePathsToReg[j]), dictObject);
+
+                                }
                             }
 
                         }
