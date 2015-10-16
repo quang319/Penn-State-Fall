@@ -40,7 +40,7 @@ namespace TcpTorrent
             while (true)
             {
                 userCommand = getCommand();
-                switch(userCommand.Item1)
+                switch (userCommand.Item1)
                 {
                     case "LISTUPLOADABLES":
                         // Clearing the previous file paths since we are repopulating it
@@ -55,7 +55,7 @@ namespace TcpTorrent
                             Console.WriteLine("{0}) {1}", i, Path.GetFileName(file));
                             clientState.UploadableFilePath.Add(file);
                             clientState.UploadableFileSize.Add(file.Length);
-                            
+
                             i++;
                         }
                         commandPrint();
@@ -84,7 +84,7 @@ namespace TcpTorrent
                             clientState.FilePathsToReg.Add(clientState.UploadableFilePath[Convert.ToInt32(item) - 1]);
                             clientState.FilePathsToRegLength.Add(clientState.UploadableFileSize[Convert.ToInt32(item) - 1]);
                         }
-                             
+
 
                         var uploadcmd = new ClientPassableObject(clientState);
                         uploadcmd.RegisterFiles();
@@ -107,18 +107,18 @@ namespace TcpTorrent
                                     }
                                 }
                                 var DataParser = new DataSegmentObject();
-                                Tuple<string,List<string>> tupleForDict = DataParser.ChunksUpto(FileSb.ToString(),clientState.MaxChunkSize);
+                                Tuple<string, List<string>> tupleForDict = DataParser.ChunksUpto(FileSb.ToString(), clientState.MaxChunkSize);
                                 var dictObject = new ObjectForFiledict();
                                 dictObject.Hash = tupleForDict.Item1;
                                 dictObject.Segments = tupleForDict.Item2;
                                 clientState.FileDict.Add(Path.GetFileName(clientState.FilePathsToReg[j]), dictObject);
                             }
-                            
+
                         }
 
                         commandPrint();
 
-                        
+
                         break;
 
                     case "LISTDOWNLOADABLES":
@@ -163,6 +163,21 @@ namespace TcpTorrent
 
                         var downloadClient = new TcpTorrent();
                         var downloadTask = downloadClient.GetDownloadFile(clientState);
+
+                        //var uploadCmd = new ClientPassableObject(clientState);
+                        //var uploadClient = new TcpTorrent();
+                        //uploadCmd.GetFilesLocation(clientState.FileNameToDownload);
+
+                        //var uploadTask = uploadClient.ClientStart(uploadCmd);
+
+                        //while (uploadCmd.DoneFlag == false) ;
+
+                        //Console.WriteLine("Name of file: {0}", uploadCmd.FileToDownload);
+                        //Console.WriteLine("Size of file: {0}", uploadCmd.FileToDownloadLength);
+                        //Console.WriteLine("Address: {0}", uploadCmd.AddressAtFile2Download[0]);
+                        //Console.WriteLine("Port: {0}", uploadCmd.PortAtFile2Download[0]);
+
+                        //commandPrint();
                         break;
 
                     case "LEAVE":
