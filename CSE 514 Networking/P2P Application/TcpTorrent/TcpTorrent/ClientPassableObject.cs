@@ -19,7 +19,7 @@ namespace TcpTorrent
 
         StateObject _state;
         public enum enCommands{
-        PrintDownloadable,DownloadFile,RegFiles,Leave,FileLocation
+        PrintDownloadable,DownloadFile,RegFiles,Leave,FileLocation,GetFile
         };
 
         public enum enTarget
@@ -41,7 +41,11 @@ namespace TcpTorrent
         public List<string> DownloadableFiles = new List<string>();
         public List<int> DownloadableFilesLength = new List<int>();
         public List<bool> FilesRegSuccessCount = new List<bool>();
+
         public string FileToDownload = string.Empty;
+        public int FileSegmentToDownload = 0;
+        public string FileHash = string.Empty;
+
         public int FileToDownloadLength = 0;
         public List<string> AddressAtFile2Download = new List<string>();
         public List<int> PortAtFile2Download = new List<int>();
@@ -74,5 +78,15 @@ namespace TcpTorrent
             FileToDownload = FileName;
         }
 
+        public void GetFile(string ipAddress, int portNo, string fileToGet, int segment)
+        {
+            command = (int)ClientPassableObject.enCommands.GetFile;
+            target = (int)ClientPassableObject.enTarget.Peer;
+            address = ipAddress;
+            port = portNo;
+            FileToDownload = fileToGet;
+            FileSegmentToDownload = segment;
+            
+        }
     }
 }

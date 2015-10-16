@@ -176,7 +176,21 @@ namespace TcpTorrent
                             ServerDict.Add(ReceivedMsgObject.Files[i], Sdo);
                         }
                         else
-                            SuccessList.Add(false);
+                        {
+                            bool successflag = false;
+                            foreach (var pair in ServerDict)
+                            {
+                                if (pair.Key == ReceivedMsgObject.Files[i])
+                                {
+                                    ServerDataObject ServObj = pair.Value;
+                                    ServObj.AddEndPoint(ReceivedMsgObject.ClientIP, ReceivedMsgObject.ClientPort);
+                                    successflag = true;
+                                }
+                            }
+
+                            SuccessList.Add(successflag);
+
+                        }
                     }
                     // Compile the return message for the client
                     MsgObjectToReturn.RegisterRly(SuccessList);
@@ -419,6 +433,14 @@ namespace TcpTorrent
 
                         break;
 
+                    case (int)ServerClientMsg.Commands.DataRly:
+                        taskObject.FileToDownload = ReceivedObject.ResultingDataSegment;
+                        taskObject.FileHash = ReceivedObject.HashOfFile;
+                        taskObject.FileSegmentToDownload = ReceivedObject.SegmentOfFile;
+
+                        taskObject.DoneFlag = true;
+                        break;
+
                     // if it is leave replay then we don't need to do anything
                     case (int)ServerClientMsg.Commands.LeaveRly:
                         Console.WriteLine("\nThe program is ready for shutdown. Press any key to close the program");
@@ -441,6 +463,80 @@ namespace TcpTorrent
             while (getLocationCmd.DoneFlag == false) ;
             var DataOperator = new DataSegmentObject();
             var NoOfSegments = DataOperator.GetNoOfSegments(getLocationCmd.FileToDownloadLength, clientState.MaxChunkSize);
+
+            // Remove from the list your address and port in the event that you are requesting for a file that you already have
+            List<string> AvailableAddresses = getLocationCmd.AddressAtFile2Download;
+            List<int> AvailablePorts = getLocationCmd.PortAtFile2Download;
+
+            List<int> index = new List<int>();
+            for (int i = 0; i < AvailableAddresses.Count; i++)
+            {
+                if (AvailablePorts[i] == clientState.Port)
+                {
+                    if (AvailableAddresses[i] == clientState.Address)
+                        index.Add(i);
+                }
+            }
+            foreach (var item in index)
+            {
+                AvailablePorts.RemoveAt(item);
+                AvailableAddresses.RemoveAt(item);
+            }
+
+            string FileToDownload = getLocationCmd.FileToDownload;
+            int SegmentDone = 0;
+            int SegmentInTransit = 0;
+            int NoOfAvailableClient = AvailableAddresses.Count;
+            List<bool> BusyClient = new List<bool>();
+            List<Task> task = new List<Task>();
+            List<int> indexOfTasks = new List<int>();
+            List<ClientPassableObject> cmd = new List<ClientPassableObject>();
+
+            List<string> Result = new List<string>();
+            List<int> ResultSegIndex = new List<int>();
+            string hashResult = string.Empty;
+
+            for (int i = 0; i < NoOfAvailableClient; i++)
+                BusyClient.Add(false);
+
+            while (SegmentDone < NoOfSegments)
+            {
+                if ((SegmentInTransit + SegmentDone) < NoOfSegments)
+                {
+                    if (BusyClient.IndexOf(false) > -1)
+                    {
+                        int j = BusyClient.IndexOf(false);
+
+                        var getfileCmd = new ClientPassableObject(clientState);
+                        getfileCmd.GetFile(AvailableAddresses[j], AvailablePorts[j], FileToDownload, SegmentDone);
+                        task.Add( ClientStart(getfileCmd) );
+                        indexOfTasks.Add(j);
+                        BusyClient[j] = true;
+                        cmd.Add(getfileCmd);
+                        SegmentInTransit++;
+                    }
+                    
+                }
+                else
+                {
+                    for (int k = 0; k < indexOfTasks.Count; k++)
+                    {
+                        if (cmd[k].DoneFlag)
+                        {
+                            Result.Add(cmd[k].FileToDownload);
+                            ResultSegIndex.Add(cmd[k].FileSegmentToDownload);
+                            hashResult = cmd[k].FileHash;
+
+                            BusyClient[indexOfTasks[k]] = false;
+                            task.RemoveAt(k);
+                            indexOfTasks.RemoveAt(k);
+                            cmd.RemoveAt(k);
+                            SegmentDone++;
+                            SegmentInTransit--;
+                        }
+                    }
+                }
+            }
 
             // now split
 
