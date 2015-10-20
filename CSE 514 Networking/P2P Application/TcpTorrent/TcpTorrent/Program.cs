@@ -27,10 +27,12 @@ namespace TcpTorrent
 
             Tuple<string, string> userCommand;
 
-            var tcpServer = new TcpTorrent();
-            var serverState = new StateObject();
-            serverState.ClientType = false;
-            var serverTask = tcpServer.StartListener(serverState);
+            //var tcpServer = new TcpTorrent();
+            //var serverState = new StateObject();
+            //serverState.ClientType = false;
+            //var serverTask = tcpServer.StartListener(serverState);
+
+            //tcpServer.StartListener(serverState).Wait() ;
 
             StateObject clientState = new StateObject();
             clientState.Address = "127.0.0.1";

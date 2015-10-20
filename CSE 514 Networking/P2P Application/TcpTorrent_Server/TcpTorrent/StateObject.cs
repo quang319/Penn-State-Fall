@@ -16,7 +16,7 @@ namespace TcpTorrent
         public List<int> FilePathsToRegLength = new List<int>();
         public List<string> DownloadableFileName = new List<string>();
         public List<int> DownloadableFileSize = new List<int>();
-        public int MaxChunkSize = 8192;
+        public int MaxChunkSize = 8000;
         public bool ClientType = true;
         public Dictionary<string, dynamic> FileDict = new Dictionary<string, dynamic>();
         public string FileNameToDownload = string.Empty;

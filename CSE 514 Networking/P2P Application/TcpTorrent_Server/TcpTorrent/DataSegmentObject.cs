@@ -32,5 +32,16 @@ namespace TcpTorrent
         {
             return (int)Math.Ceiling((double)SizeOfString / (double)ChunkSize);
         }
+        public string GetHash (string ItemToConvert)
+        {
+            // Get the hash of the string
+            StringBuilder sb = new StringBuilder();
+            byte[] fileBytes = Encoding.UTF8.GetBytes(ItemToConvert);
+            using (var cryptoProvider = new SHA1CryptoServiceProvider())
+            {
+                sb.Append(BitConverter.ToString(cryptoProvider.ComputeHash(fileBytes)));
+            }
+            return sb.ToString();
+        }
     }
 }

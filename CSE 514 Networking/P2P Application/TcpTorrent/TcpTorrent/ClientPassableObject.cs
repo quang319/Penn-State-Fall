@@ -44,7 +44,10 @@ namespace TcpTorrent
 
         public string FileToDownload = string.Empty;
         public int FileSegmentToDownload = 0;
-        public string FileHash = string.Empty;
+
+        public string ResultFileSegment = string.Empty;
+        public string ResultFileHash = string.Empty;
+        public int ResultFileSegmentNo = 0;
 
         public int FileToDownloadLength = 0;
         public List<string> AddressAtFile2Download = new List<string>();

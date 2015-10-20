@@ -13,24 +13,28 @@ namespace TcpTorrent
         static void Main(string[] args)
         {
 
-            using (var sr = new StreamReader(@"../../Intro.txt"))
-            {
-                while(!sr.EndOfStream)
-                    Console.WriteLine(sr.ReadLine());
-            }
-            using (var sr = new StreamReader(@"../../Example.txt"))
-            {
-                while (!sr.EndOfStream)
-                    Console.WriteLine(sr.ReadLine());
-            }
-            commandPrint();
+            //using (var sr = new StreamReader(@"../../Intro.txt"))
+            //{
+            //    while(!sr.EndOfStream)
+            //        Console.WriteLine(sr.ReadLine());
+            //}
+            //using (var sr = new StreamReader(@"../../Example.txt"))
+            //{
+            //    while (!sr.EndOfStream)
+            //        Console.WriteLine(sr.ReadLine());
+            //}
+            //commandPrint();
+
+            Console.WriteLine("This is the server. Do not close.");
 
             //Tuple<string, string> userCommand;
 
             var tcpServer = new TcpTorrent();
             var serverState = new StateObject();
             serverState.ClientType = false;
-            tcpServer.StartListener(serverState).Wait() ;
+            //var serverTask = tcpServer.StartListener(serverState);
+
+            tcpServer.StartListener(serverState).Wait();
 
             //StateObject clientState = new StateObject();
             //clientState.Address = "127.0.0.1";
@@ -44,7 +48,7 @@ namespace TcpTorrent
             //    switch (userCommand.Item1)
             //    {
             //        case "LISTUPLOADABLES":
-            //            // Clearing the previous file paths since we are repopulating it
+            //            Clearing the previous file paths since we are repopulating it
             //            clientState.UploadableFilePath.Clear();
             //            clientState.UploadableFileSize.Clear();
 
@@ -67,7 +71,7 @@ namespace TcpTorrent
 
             //            Tuple<bool, string> validCheck = IsValidInput(userCommand.Item2, clientState.UploadableFilePath.Count);
 
-            //            // If any of the value in the previous loop was invalid, we need to break out of this case. 
+            //            If any of the value in the previous loop was invalid, we need to break out of this case.
             //            if (validCheck.Item1 == false)
             //            {
             //                Console.WriteLine(validCheck.Item2);
@@ -75,9 +79,9 @@ namespace TcpTorrent
             //                break;
             //            }
 
-            //            // Now what we know that the user's inputs are valid, we need to store the path of the files that the user wants to upload
+            //            Now what we know that the user's inputs are valid, we need to store the path of the files that the user wants to upload
 
-            //            // Clearing the previous FilestoREg list because we have a new list. 
+            //             Clearing the previous FilestoREg list because we have a new list.
             //            clientState.FilePathsToReg.Clear();
             //            clientState.FilePathsToRegLength.Clear();
             //            foreach (string item in userCommand.Item2.Split(','))
@@ -94,7 +98,7 @@ namespace TcpTorrent
 
             //            while (uploadcmd.DoneFlag == false) ;
 
-            //            // Now that we recieved upload on which file can be uploaded, we need to split the files up into segments and store it in memory
+            //            Now that we recieved upload on which file can be uploaded, we need to split the files up into segments and store it in memory
             //            for (int j = 0; j < uploadcmd.FilesRegSuccessCount.Count; j++)
             //            {
             //                if (uploadcmd.FilesRegSuccessCount[j] == true)
@@ -112,7 +116,11 @@ namespace TcpTorrent
             //                    var dictObject = new ObjectForFiledict();
             //                    dictObject.Hash = tupleForDict.Item1;
             //                    dictObject.Segments = tupleForDict.Item2;
-            //                    clientState.FileDict.Add(Path.GetFileName(clientState.FilePathsToReg[j]), dictObject);
+            //                    if (!clientState.FileDict.ContainsKey(Path.GetFileName(clientState.FilePathsToReg[j])))
+            //                    {
+            //                        clientState.FileDict.Add(Path.GetFileName(clientState.FilePathsToReg[j]), dictObject);
+
+            //                    }
             //                }
 
             //            }
@@ -141,22 +149,22 @@ namespace TcpTorrent
             //        case "DOWNLOAD":
             //            Tuple<bool, string> downloadValidCheck = IsValidInput(userCommand.Item2, clientState.DownloadableFileName.Count);
 
-            //            // If any of the value in the previous loop was invalid, we need to break out of this case. 
+            //            If any of the value in the previous loop was invalid, we need to break out of this case.
             //            if (downloadValidCheck.Item1 == false)
             //            {
             //                Console.WriteLine(downloadValidCheck.Item2);
             //                commandPrint();
             //                break;
             //            }
-            //            // We are only going to allow one file to be download at a time
+            //            We are only going to allow one file to be download at a time
             //            if (userCommand.Item2.Split(',').Length > 1)
             //            {
             //                Console.WriteLine("/nYou can only select one download file at a time");
             //                break;
             //            }
 
-            //            // Clearing the previous FilestoREg list because we have a new list. 
-            //            clientState.FileNameToDownload = string.Empty;
+            //            Clearing the previous FilestoREg list because we have a new list.
+            //           clientState.FileNameToDownload = string.Empty;
             //            clientState.FileNameToDownloadLength = 0;
 
             //            clientState.FileNameToDownload = clientState.DownloadableFileName[Convert.ToInt32(userCommand.Item2) - 1];
@@ -165,20 +173,20 @@ namespace TcpTorrent
             //            var downloadClient = new TcpTorrent();
             //            var downloadTask = downloadClient.GetDownloadFile(clientState);
 
-            //            //var uploadCmd = new ClientPassableObject(clientState);
-            //            //var uploadClient = new TcpTorrent();
-            //            //uploadCmd.GetFilesLocation(clientState.FileNameToDownload);
+            //            var uploadCmd = new ClientPassableObject(clientState);
+            //            var uploadClient = new TcpTorrent();
+            //            uploadCmd.GetFilesLocation(clientState.FileNameToDownload);
 
-            //            //var uploadTask = uploadClient.ClientStart(uploadCmd);
+            //            var uploadTask = uploadClient.ClientStart(uploadCmd);
 
-            //            //while (uploadCmd.DoneFlag == false) ;
+            //            while (uploadCmd.DoneFlag == false) ;
 
-            //            //Console.WriteLine("Name of file: {0}", uploadCmd.FileToDownload);
-            //            //Console.WriteLine("Size of file: {0}", uploadCmd.FileToDownloadLength);
-            //            //Console.WriteLine("Address: {0}", uploadCmd.AddressAtFile2Download[0]);
-            //            //Console.WriteLine("Port: {0}", uploadCmd.PortAtFile2Download[0]);
+            //            Console.WriteLine("Name of file: {0}", uploadCmd.FileToDownload);
+            //            Console.WriteLine("Size of file: {0}", uploadCmd.FileToDownloadLength);
+            //            Console.WriteLine("Address: {0}", uploadCmd.AddressAtFile2Download[0]);
+            //            Console.WriteLine("Port: {0}", uploadCmd.PortAtFile2Download[0]);
 
-            //            //commandPrint();
+            //            commandPrint();
             //            break;
 
             //        case "LEAVE":
