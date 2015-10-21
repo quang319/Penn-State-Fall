@@ -44,7 +44,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ClientDataObject.cs" />
     <Compile Include="ClientPassableObject.cs" />
     <Compile Include="DataSegmentObject.cs" />
     <Compile Include="ObjectForFiledict.cs" />

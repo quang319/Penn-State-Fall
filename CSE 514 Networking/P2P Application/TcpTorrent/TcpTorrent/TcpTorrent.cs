@@ -30,6 +30,7 @@ namespace TcpTorrent
             var TcpServer = TcpListener.Create(1000);
             if (tcpState.ClientType == false)
             {
+                Console.WriteLine("Creating server on port {0}", 1000);
                 TcpServer = TcpListener.Create(1000);
 
             }
@@ -45,6 +46,7 @@ namespace TcpTorrent
                 if (task.IsFaulted)
                     task.Wait();
             }
+            //Console.WriteLine("Server is closing down");
 
         }
 
@@ -325,6 +327,7 @@ namespace TcpTorrent
         public async Task ClientStart(ClientPassableObject taskObject)
         {
             // Notice that we don't care about what port we are using as it will be destroyed at the end of the connection
+            string localIP = GetLocalIPAddress();
             IPEndPoint localEP = new IPEndPoint(IPAddress.Parse("127.0.0.1"), GetOpenPort());
             var tcpclient = new TcpClient(localEP);
 
@@ -332,18 +335,22 @@ namespace TcpTorrent
             if (taskObject.target == (int)ClientPassableObject.enTarget.Server)
             {
                 await tcpclient.ConnectAsync(IPAddress.Parse("127.0.0.1"), 1000);
-                //Console.WriteLine("Connected to the server");
+                Console.WriteLine("Client [{0} , {1}]: Connected to the server",localEP.Address,localEP.Port);
             }
             
             else
             {
-                Console.Write("Requesting data from ClientServer at address {0} and port {1}", taskObject.address,taskObject.port);
-                // Need to implement this to go to an actual client
-                await tcpclient.ConnectAsync(IPAddress.Parse(taskObject.address), taskObject.port);
+                await tcpclient.ConnectAsync(IPAddress.Parse(taskObject.ClientServerAddr), taskObject.ClientServerPort);
+                Console.Write("Client [{0} , {1}]: Connected with ClientServer at address {2} and port {3}", localEP.Address, localEP.Port, taskObject.address, taskObject.port);
+
             }
             var task = ClientOnConnectAsync(tcpclient,taskObject);
             if (task.IsFaulted)
                 task.Wait();
+
+            // Closing down the connection now that we don't need it any more
+            Console.WriteLine("Client: Closing down connection wih server");
+            //tcpclient.Close();
 
         }
 
@@ -694,6 +701,19 @@ namespace TcpTorrent
         public static void commandPrint()
         {
             Console.Write("\nCommand >> ");
+        }
+
+        public string GetLocalIPAddress()
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    return ip.ToString();
+                }
+            }
+            throw new Exception("Local IP Address Not Found!");
         }
     }
 }

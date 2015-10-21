@@ -12,6 +12,8 @@ namespace TcpTorrent
         public int Port = 0;
         public List<string> UploadableFilePath = new List<string>();
         public List<int> UploadableFileSize = new List<int>();
+        public String TempFolderPath = string.Empty;
+
         public List<string> FilePathsToReg = new List<string>();
         public List<int> FilePathsToRegLength = new List<int>();
         public List<string> DownloadableFileName = new List<string>();

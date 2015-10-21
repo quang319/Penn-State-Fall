@@ -71,6 +71,7 @@ namespace TcpTorrent
         // Leave Request
         public void LeaveRq(string address, int port)
         {
+            Console.WriteLine("Client: Requesting to leave at IP: {0}, and port: {1}", address, port);
             Command = (int)Commands.LeaveRq;
             ClientIP = address;
             ClientPort = port;
@@ -105,6 +106,7 @@ namespace TcpTorrent
         // Leave Reply
         public void LeaveRly()
         {
+            Console.WriteLine("Server: Permitting client to leave");
             Command = (int)Commands.LeaveRly;
         }
 

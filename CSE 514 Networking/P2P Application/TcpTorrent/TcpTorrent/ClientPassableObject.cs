@@ -29,6 +29,9 @@ namespace TcpTorrent
         public string address = string.Empty;
         public int port = 0;
 
+        public string ClientServerAddr = string.Empty;
+        public int ClientServerPort = 0;
+
         public int command = 0;
 
         public int target = 0;
@@ -85,8 +88,8 @@ namespace TcpTorrent
         {
             command = (int)ClientPassableObject.enCommands.GetFile;
             target = (int)ClientPassableObject.enTarget.Peer;
-            address = ipAddress;
-            port = portNo;
+            ClientServerAddr = ipAddress;
+            ClientServerPort = portNo;
             FileToDownload = fileToGet;
             FileSegmentToDownload = segment;
             
