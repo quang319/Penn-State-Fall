@@ -15,13 +15,10 @@ namespace TcpTorrent
 
         public bool AddEndPoint(string address, int port)
         {
-            if (Addresses.IndexOf(address) == -1)
-            {
                 Addresses.Add(address);
                 Ports.Add(port);
                 return true;
-            }
-            return false;
+
         }
 
         public void RemoveEndPoint(string address)

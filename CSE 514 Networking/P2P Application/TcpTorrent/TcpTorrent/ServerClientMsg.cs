@@ -56,9 +56,11 @@ namespace TcpTorrent
         }
 
         // File list request
-        public void FileListRq ()
+        public void FileListRq (string ipAddress, int port)
         {
             Command = (int)Commands.FileListRq;
+            ClientIP = ipAddress;
+            ClientPort = port;
         }
 
         // File Location Request

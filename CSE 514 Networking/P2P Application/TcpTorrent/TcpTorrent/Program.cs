@@ -27,16 +27,17 @@ namespace TcpTorrent
 
             Tuple<string, string> userCommand;
 
-            var tcpServer = new TcpTorrent();
-            var serverState = new StateObject();
-            serverState.ClientType = false;
-            var serverTask = tcpServer.StartListener(serverState);
+            //var tcpServer = new TcpTorrent();
+            //var serverState = new StateObject();
+            //serverState.ClientType = false;
+            //var serverTask = tcpServer.StartListener(serverState);
 
-            //tcpServer.StartListener(serverState).Wait() ;
+            //tcpServer.StartListener(serverState).Wait();
 
             StateObject clientState = new StateObject();
             var clientServer = new TcpTorrent();
-            clientState.Address = clientServer.GetLocalIPAddress();
+            clientState.Address = "127.0.0.1";
+            //clientState.Address = clientServer.GetLocalIPAddress();
             clientState.Port = clientServer.GetOpenPort();
             Console.WriteLine("Creating Client's server on Address: {0} , and Port: {1}", clientState.Address, clientState.Port);
             var task = clientServer.StartListener(clientState);
@@ -122,30 +123,30 @@ namespace TcpTorrent
                         // Now that we recieved upload on which file can be uploaded, we need to split the files up into segments and store it in the temp folder
                         for (int j = 0; j < uploadcmd.FilesRegSuccessCount.Count; j++)
                         {
-                        if (uploadcmd.FilesRegSuccessCount[j] == true)
-                        {
-
-                            // Only do something if we don't already have the file in storage.
-                            if (!clientState.FileDict.ContainsKey(Path.GetFileName(clientState.FilePathsToReg[j])))
+                            if (uploadcmd.FilesRegSuccessCount[j] == true)
                             {
-                                var DataParser = new DataSegmentObject();
 
-                                // splitting the files up and store it in the temp folder
-                                DataParser.SplitFile(clientState.FilePathsToReg[j], clientState.MaxChunkSize, clientState.TempFolderPath);
-                                var dictObject = new ObjectForFiledict();
-                                dictObject.Hash = DataParser.GetHash(clientState.FilePathsToReg[j]);
-                                dictObject.NoOfSegments = DataParser.GetNoOfSegments(clientState.FilePathsToRegLength[j], clientState.MaxChunkSize);
+                                // Only do something if we don't already have the file in storage.
+                                if (!clientState.FileDict.ContainsKey(Path.GetFileName(clientState.FilePathsToReg[j])))
+                                {
+                                    var DataParser = new DataSegmentObject();
 
-                                Console.WriteLine("Client: splitting file: {0} of length {1} to {2} segments with a hash of {3}",
-                                clientState.FilePathsToReg[j], clientState.FilePathsToRegLength[j], dictObject.NoOfSegments, dictObject.Hash);
+                                    // splitting the files up and store it in the temp folder
+                                    DataParser.SplitFile(clientState.FilePathsToReg[j], clientState.MaxChunkSize, clientState.TempFolderPath);
+                                    var dictObject = new ObjectForFiledict();
+                                    dictObject.Hash = DataParser.GetHash(clientState.FilePathsToReg[j]);
+                                    dictObject.NoOfSegments = DataParser.GetNoOfSegments(clientState.FilePathsToRegLength[j], clientState.MaxChunkSize);
+
+                                    Console.WriteLine("Client: splitting file: {0} of length {1} to {2} segments with a hash of {3}",
+                                    clientState.FilePathsToReg[j], clientState.FilePathsToRegLength[j], dictObject.NoOfSegments, dictObject.Hash);
 
 
-                                clientState.FileDict.Add(Path.GetFileName(clientState.FilePathsToReg[j]), dictObject);
+                                    clientState.FileDict.Add(Path.GetFileName(clientState.FilePathsToReg[j]), dictObject);
+                                }
+                                else
+                                    Console.WriteLine("Client: The file already exist in the dictionary. Do not add");
                             }
-                            else
-                                Console.WriteLine("Client: The file already exist in the dictionary. Do not add");
-                        }
-                            
+
 
                         }
 
@@ -196,6 +197,8 @@ namespace TcpTorrent
 
                         var downloadClient = new TcpTorrent();
                         var downloadTask = downloadClient.GetDownloadFile(clientState);
+                        if (downloadTask.IsFaulted)
+                            downloadTask.Wait();
 
                         //var uploadCmd = new ClientPassableObject(clientState);
                         //var uploadClient = new TcpTorrent();

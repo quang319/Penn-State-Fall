@@ -38,7 +38,7 @@ namespace TcpTorrent
                 TcpServer = TcpListener.Create(tcpState.Port);
             }
 
-            TcpServer.Start(20);
+            TcpServer.Start(100);
             while (true)
             {
                 var TcpClient = await TcpServer.AcceptTcpClientAsync();
@@ -193,7 +193,8 @@ namespace TcpTorrent
                             SuccessList.Add(Sdo.AddEndPoint(ReceivedMsgObject.ClientIP, ReceivedMsgObject.ClientPort));
                             Sdo.Length = ReceivedMsgObject.FilesLength[i];
                             ServerDict.Add(ReceivedMsgObject.Files[i], Sdo);
-                            Console.WriteLine("Server: Added file: {0} to the server dict", ReceivedMsgObject.Files[i]);
+                            Console.WriteLine("Server: Added file: {0} to the server dict for client: {1} , {2}", ReceivedMsgObject.Files[i], 
+                                ReceivedMsgObject.ClientIP, ReceivedMsgObject.ClientPort);
                         }
                         else
                         {
@@ -209,15 +210,16 @@ namespace TcpTorrent
                                         {
                                             if (ServObj.Addresses[k] == ReceivedMsgObject.ClientIP)
                                             {
-                                                //Console.WriteLine("Server: Reject file {0} reg for client: {1) , {2}", ReceivedMsgObject.Files[i],
-                                                    //ReceivedMsgObject.ClientIP, ReceivedMsgObject.ClientPort);
+                                                Console.WriteLine("Server: Reject file {0} reg for client: {1} , {2}", ReceivedMsgObject.Files[i],
+                                                    ReceivedMsgObject.ClientIP, ReceivedMsgObject.ClientPort);
                                                 successflag = false;
                                             }
                                         }
                                     }
                                     if (successflag == true)
                                     {
-                                        Console.WriteLine("Server: Added file: {0} to the server dict", ReceivedMsgObject.Files[i]);
+                                        Console.WriteLine("Server: Added client {0} , {1} to server dict", 
+                                            ReceivedMsgObject.ClientIP, ReceivedMsgObject.ClientPort, ReceivedMsgObject.Files[i]);
                                         ServObj.AddEndPoint(ReceivedMsgObject.ClientIP, ReceivedMsgObject.ClientPort);
                                     }
                                     break;
@@ -242,9 +244,27 @@ namespace TcpTorrent
 
                     foreach (var pair in ServerDict)
                     {
-                        fileName.Add(pair.Key);
-                        ServerDataObject obj = pair.Value;
-                        fileSize.Add(obj.Length);
+                        bool HasFileAlready = false;
+                        ServerDataObject ServObj = pair.Value;
+                        for (int k = 0; k < ServObj.Addresses.Count; k++)
+                        {
+                            if (ServObj.Ports[k] == ReceivedMsgObject.ClientPort)
+                            {
+                                if (ServObj.Addresses[k] == ReceivedMsgObject.ClientIP)
+                                {
+                                    Console.WriteLine("Server: client {0} , {1} already has the file {2}", ReceivedMsgObject.ClientIP,
+                                        ReceivedMsgObject.ClientPort, pair.Key);
+                                    HasFileAlready = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (HasFileAlready == false)
+                        {
+                            fileName.Add(pair.Key);
+                            ServerDataObject obj = pair.Value;
+                            fileSize.Add(obj.Length);
+                        }
                     }
                     MsgObjectToReturn.FileListRly(fileName, fileSize);
                     break;
@@ -343,24 +363,26 @@ namespace TcpTorrent
             ////////////////////////////////////
             string localIP = GetLocalIPAddress();
             IPEndPoint localEP = new IPEndPoint(IPAddress.Parse("127.0.0.1"), GetOpenPort());
-            var tcpclient = new TcpClient(localEP);
-
-
-            if (taskObject.target == (int)ClientPassableObject.enTarget.Server)
+            //var tcpclient = new TcpClient(localEP);
+            using (var tcpclient = new TcpClient(localEP))
             {
-                await tcpclient.ConnectAsync(IPAddress.Parse("127.0.0.1"), 1000);
-                Console.WriteLine("Client [{0} , {1}]: Connected to the server",localEP.Address,localEP.Port);
-            }
-            
-            else
-            {
-                await tcpclient.ConnectAsync(IPAddress.Parse(taskObject.ClientServerAddr), taskObject.ClientServerPort);
-                Console.Write("Client [{0} , {1}]: Connected with ClientServer at address {2} and port {3}", localEP.Address, localEP.Port, taskObject.address, taskObject.port);
+                if (taskObject.target == (int)ClientPassableObject.enTarget.Server)
+                {
+                    await tcpclient.ConnectAsync(IPAddress.Parse("127.0.0.1"), 1000);
+                    Console.WriteLine("Client [{0} , {1}]: Connected to the server", localEP.Address, localEP.Port);
+                }
 
-            }
-            var task = ClientOnConnectAsync(tcpclient,taskObject);
-            if (task.IsFaulted)
+                else
+                {
+                    await tcpclient.ConnectAsync(IPAddress.Parse(taskObject.ClientServerAddr), taskObject.ClientServerPort);
+                    Console.Write("Client [{0} , {1}]: Connected with ClientServer at address {2} and port {3}", localEP.Address, localEP.Port, taskObject.address, taskObject.port);
+
+                }
+                var task = ClientOnConnectAsync(tcpclient, taskObject);
+                if (task.IsFaulted)
+                    task.Wait();
                 task.Wait();
+            }
 
         }
 
@@ -406,7 +428,7 @@ namespace TcpTorrent
                         break;
 
                     case (int)ClientPassableObject.enCommands.PrintDownloadable:
-                        objectToClient.FileListRq();
+                        objectToClient.FileListRq(taskObject.address, taskObject.port);
                         break;
 
                     case (int)ClientPassableObject.enCommands.Leave:
@@ -462,7 +484,7 @@ namespace TcpTorrent
                         {
                             var file = ReceivedObject.Files[i];
                             var length = ReceivedObject.FilesLength[i];
-                            Console.WriteLine("{0}) {1}", i + 1, file);
+                            Console.WriteLine("{0}) {1}     Size: {2} bytes", i + 1, file, length);
                             taskObject.DownloadableFiles.Add(file);
                             taskObject.DownloadableFilesLength.Add(length);
                         }
@@ -508,125 +530,141 @@ namespace TcpTorrent
             getLocationCmd.GetFilesLocation(clientState.FileNameToDownload);
             await ClientStart(getLocationCmd);
             while (getLocationCmd.DoneFlag == false) ;
+
+            Console.WriteLine("Client: File: {0} has a length of {1}", clientState.FileNameToDownload, getLocationCmd.FileToDownloadLength);
+            for (int i = 0; i < getLocationCmd.AddressAtFile2Download.Count; i++)
+            {
+                Console.WriteLine("Client: Address: {0}  Port: {1}", getLocationCmd.AddressAtFile2Download[i],
+                    getLocationCmd.PortAtFile2Download[i]);
+            }
+
+            // Just pick a client and request all the segments from that one person only
             var DataOperator = new DataSegmentObject();
             var NoOfSegments = DataOperator.GetNoOfSegments(getLocationCmd.FileToDownloadLength, clientState.MaxChunkSize);
 
-            // Remove from the list your address and port in the event that you are requesting for a file that you already have
-            List<string> AddressesFromServer = getLocationCmd.AddressAtFile2Download;
-            List<int> PortsFromServer = getLocationCmd.PortAtFile2Download;
+            for (int i = 0; i < NoOfSegments; i++)
+            {
+                var getFileCmd = new ClientPassableObject(clientState);
+                getFileCmd.GetFile(getLocationCmd.AddressAtFile2Download[1], getLocationCmd.PortAtFile2Download[1], clientState.FileNameToDownload, i);
+                await ClientStart(getFileCmd);
+            }
 
-            //List<int> index = new List<int>();
-            //for (int i = 0; i < AvailableAddresses.Count; i++)
+            //// Remove from the list your address and port in the event that you are requesting for a file that you already have
+            //List<string> AddressesFromServer = getLocationCmd.AddressAtFile2Download;
+            //List<int> PortsFromServer = getLocationCmd.PortAtFile2Download;
+
+            ////List<int> index = new List<int>();
+            ////for (int i = 0; i < AvailableAddresses.Count; i++)
+            ////{
+            ////    if (AvailablePorts[i] == clientState.Port)
+            ////    {
+            ////        if (AvailableAddresses[i] == clientState.Address)
+            ////            index.Add(i);
+            ////    }
+            ////}
+            ////foreach (var item in index)
+            ////{
+            ////    AvailablePorts.RemoveAt(item);
+            ////    AvailableAddresses.RemoveAt(item);
+            ////}
+            //int NoOfAvailableClient = AddressesFromServer.Count;
+            //List<string> AvailableAddresses = new List<string>();
+            //List<int> AvailablePorts = new List<int>();
+
+            //for (int w = 0; w < NoOfAvailableClient; w++)
             //{
-            //    if (AvailablePorts[i] == clientState.Port)
+            //    if ((PortsFromServer[w] == clientState.Port) && (AddressesFromServer[w] == clientState.Address))
             //    {
-            //        if (AvailableAddresses[i] == clientState.Address)
-            //            index.Add(i);
+            //        if (NoOfAvailableClient == 1)
+            //        {
+            //            Console.WriteLine("You are the only one with the file");
+            //            commandPrint();
+            //            return;
+            //        }
+            //    }
+            //    else
+            //    {
+            //        AvailableAddresses.Add(AddressesFromServer[w]);
+            //        AvailablePorts.Add(PortsFromServer[w]);
             //    }
             //}
-            //foreach (var item in index)
+            //NoOfAvailableClient = AvailableAddresses.Count;
+
+
+            //string FileToDownload = getLocationCmd.FileToDownload;
+            //int SegmentDone = 0;
+            //int SegmentInTransit = 0;
+            //List<bool> BusyClient = new List<bool>();
+            //List<Task> task = new List<Task>();
+            //List<int> indexOfTasks = new List<int>();
+            //List<ClientPassableObject> cmd = new List<ClientPassableObject>();
+
+            //List<string> Result = new List<string>();
+            //List<int> ResultSegIndex = new List<int>();
+            //string hashResult = string.Empty;
+
+            //for (int i = 0; i < NoOfAvailableClient; i++)
+            //    BusyClient.Add(false);
+
+            //while (SegmentDone < NoOfSegments)
             //{
-            //    AvailablePorts.RemoveAt(item);
-            //    AvailableAddresses.RemoveAt(item);
+            //    if ((SegmentInTransit + SegmentDone) < NoOfSegments)
+            //    {
+            //        if (BusyClient.IndexOf(false) > -1)
+            //        {
+            //            int j = BusyClient.IndexOf(false);
+
+            //            var getfileCmd = new ClientPassableObject(clientState);
+            //            getfileCmd.GetFile(AvailableAddresses[j], AvailablePorts[j], FileToDownload, SegmentDone);
+            //            Console.WriteLine("Requesting segment #{0} from {1}  ,  {2}", SegmentDone, AvailableAddresses[j], AvailablePorts[j]);
+            //            task.Add( ClientStart(getfileCmd) );
+            //            indexOfTasks.Add(j);
+            //            BusyClient[j] = true;   
+            //            cmd.Add(getfileCmd);
+            //            SegmentInTransit++;
+            //        }
+
+            //    }
+            //    else
+            //    {
+            //        for (int k = 0; k < indexOfTasks.Count; k++)
+            //        {
+            //            if (cmd[k].DoneFlag)
+            //            {
+            //                Result.Add(cmd[k].ResultFileSegment);
+            //                ResultSegIndex.Add(cmd[k].ResultFileSegmentNo);
+            //                hashResult = cmd[k].ResultFileHash;
+
+            //                BusyClient[indexOfTasks[k]] = false;
+            //                task.RemoveAt(k);
+            //                indexOfTasks.RemoveAt(k);
+            //                cmd.RemoveAt(k);
+            //                SegmentDone++;
+            //                SegmentInTransit--;
+            //            }
+            //        }
+            //    }
             //}
-            int NoOfAvailableClient = AddressesFromServer.Count;
-            List<string> AvailableAddresses = new List<string>();
-            List<int> AvailablePorts = new List<int>();
 
-            for (int w = 0; w < NoOfAvailableClient; w++)
-            {
-                if ((PortsFromServer[w] == clientState.Port) && (AddressesFromServer[w] == clientState.Address))
-                {
-                    if (NoOfAvailableClient == 1)
-                    {
-                        Console.WriteLine("You are the only one with the file");
-                        commandPrint();
-                        return;
-                    }
-                }
-                else
-                {
-                    AvailableAddresses.Add(AddressesFromServer[w]);
-                    AvailablePorts.Add(PortsFromServer[w]);
-                }
-            }
-            NoOfAvailableClient = AvailableAddresses.Count;
+            //StringBuilder ResultInOrder = new StringBuilder();
+            //for (int k = 0; k < Result.Count; k++)
+            //{
+            //    int indexOfSegment = ResultSegIndex.IndexOf(k);
+            //    ResultInOrder.Append( Result[indexOfSegment]);
+            //}
 
+            //string ResultWhole = ResultInOrder.ToString();
 
-            string FileToDownload = getLocationCmd.FileToDownload;
-            int SegmentDone = 0;
-            int SegmentInTransit = 0;
-            List<bool> BusyClient = new List<bool>();
-            List<Task> task = new List<Task>();
-            List<int> indexOfTasks = new List<int>();
-            List<ClientPassableObject> cmd = new List<ClientPassableObject>();
+            //string ConvertedHash = DataOperator.GetHash(ResultWhole);
+            //if (ConvertedHash != hashResult)
+            //{
+            //    Console.WriteLine("The hashes does not match");
+            //}
 
-            List<string> Result = new List<string>();
-            List<int> ResultSegIndex = new List<int>();
-            string hashResult = string.Empty;
-
-            for (int i = 0; i < NoOfAvailableClient; i++)
-                BusyClient.Add(false);
-
-            while (SegmentDone < NoOfSegments)
-            {
-                if ((SegmentInTransit + SegmentDone) < NoOfSegments)
-                {
-                    if (BusyClient.IndexOf(false) > -1)
-                    {
-                        int j = BusyClient.IndexOf(false);
-
-                        var getfileCmd = new ClientPassableObject(clientState);
-                        getfileCmd.GetFile(AvailableAddresses[j], AvailablePorts[j], FileToDownload, SegmentDone);
-                        Console.WriteLine("Requesting segment #{0} from {1}  ,  {2}", SegmentDone, AvailableAddresses[j], AvailablePorts[j]);
-                        task.Add( ClientStart(getfileCmd) );
-                        indexOfTasks.Add(j);
-                        BusyClient[j] = true;   
-                        cmd.Add(getfileCmd);
-                        SegmentInTransit++;
-                    }
-                    
-                }
-                else
-                {
-                    for (int k = 0; k < indexOfTasks.Count; k++)
-                    {
-                        if (cmd[k].DoneFlag)
-                        {
-                            Result.Add(cmd[k].ResultFileSegment);
-                            ResultSegIndex.Add(cmd[k].ResultFileSegmentNo);
-                            hashResult = cmd[k].ResultFileHash;
-
-                            BusyClient[indexOfTasks[k]] = false;
-                            task.RemoveAt(k);
-                            indexOfTasks.RemoveAt(k);
-                            cmd.RemoveAt(k);
-                            SegmentDone++;
-                            SegmentInTransit--;
-                        }
-                    }
-                }
-            }
-
-            StringBuilder ResultInOrder = new StringBuilder();
-            for (int k = 0; k < Result.Count; k++)
-            {
-                int indexOfSegment = ResultSegIndex.IndexOf(k);
-                ResultInOrder.Append( Result[indexOfSegment]);
-            }
-
-            string ResultWhole = ResultInOrder.ToString();
-
-            string ConvertedHash = DataOperator.GetHash(ResultWhole);
-            if (ConvertedHash != hashResult)
-            {
-                Console.WriteLine("The hashes does not match");
-            }
-
-            foreach (var item in Result)
-            {
-                Console.WriteLine(item);
-            }
+            //foreach (var item in Result)
+            //{
+            //    Console.WriteLine(item);
+            //}
 
             // now split
 
