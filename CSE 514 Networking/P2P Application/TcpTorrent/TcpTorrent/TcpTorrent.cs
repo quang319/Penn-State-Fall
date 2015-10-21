@@ -112,17 +112,39 @@ namespace TcpTorrent
                         // If this thread if for the client 
                         else
                         {
-                            Console.WriteLine("client Server received {0} command", ReceivedMsgObject.Command);
+                            
                             switch (ReceivedMsgObject.Command)
                             {
                                 case (int)ServerClientMsg.Commands.DataRq:
 
-                                    string file = string.Empty;
+                                    byte[] file;
                                     string hash = string.Empty;
+                                    Console.WriteLine("Client Server: received data request for file: {0} segment: {1}", ReceivedMsgObject.NameOfFile,ReceivedMsgObject.SegmentOfFile);
 
-                                    Console.WriteLine("ClientServer received the data request");
-                                    
+                                    string filepath = tcpState.TempFolderPath + @"/" + Path.GetFileNameWithoutExtension(ReceivedMsgObject.NameOfFile);
+                                    filepath += "_temp" + ReceivedMsgObject.SegmentOfFile + Path.GetExtension(ReceivedMsgObject.NameOfFile);
+                                    Console.WriteLine("Client Server: Retreiving file: {0}", filepath);
 
+                                    if (File.Exists(filepath))
+                                    {
+                                        file = File.ReadAllBytes(filepath);
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("Client Server could not find the file {0}", filepath);
+                                        file = new byte[2];
+                                    }
+
+                                    foreach (var pair in tcpState.FileDict)
+                                    {
+                                        if(pair.Key == ReceivedMsgObject.NameOfFile)
+                                        {
+                                            ObjectForFiledict obj = pair.Value;
+                                            hash = obj.Hash;
+                                            Console.WriteLine("Client Server: Hash = {0}", hash);
+                                            break;
+                                        }
+                                    }
                                     /////////// NEED TO IMPLEMENT THIS DIFFERENTLY ////////////////
                                     /////////////////////////////////////
                                     //////////////////////////
@@ -139,10 +161,9 @@ namespace TcpTorrent
                                     //        {
                                     //            Console.WriteLine("string or hash is empty");
                                     //        }
-                                            
+
                                     //    }
                                     //}
-                                    Console.WriteLine("ClientServer is sending string: {0} \nWith a hash of: {1}", file, hash);
                                     MsgObjectToReturn.DataRly(hash, ReceivedMsgObject.SegmentOfFile, file);
 
                                     break;
@@ -541,13 +562,21 @@ namespace TcpTorrent
             // Just pick a client and request all the segments from that one person only
             var DataOperator = new DataSegmentObject();
             var NoOfSegments = DataOperator.GetNoOfSegments(getLocationCmd.FileToDownloadLength, clientState.MaxChunkSize);
-
+            List<byte[]> bytesResult = new List<byte[]>();
+            string hash = string.Empty;
             for (int i = 0; i < NoOfSegments; i++)
             {
+                Console.WriteLine("Client: requesting File: {0} segment: {1} from {2}  {3}", clientState.FileNameToDownload, i,
+                    getLocationCmd.AddressAtFile2Download[0], getLocationCmd.PortAtFile2Download[0]);
                 var getFileCmd = new ClientPassableObject(clientState);
-                getFileCmd.GetFile(getLocationCmd.AddressAtFile2Download[1], getLocationCmd.PortAtFile2Download[1], clientState.FileNameToDownload, i);
+                getFileCmd.GetFile(getLocationCmd.AddressAtFile2Download[0], getLocationCmd.PortAtFile2Download[0], clientState.FileNameToDownload, i);
                 await ClientStart(getFileCmd);
+                while (getFileCmd.DoneFlag == false) ;
+                Console.WriteLine("Client: Received segment {0}", i);
+                bytesResult.Add(getFileCmd.ResultFileSegment);
+                hash = getFileCmd.ResultFileHash;
             }
+            Console.WriteLine("Received all the files");
 
             //// Remove from the list your address and port in the event that you are requesting for a file that you already have
             //List<string> AddressesFromServer = getLocationCmd.AddressAtFile2Download;

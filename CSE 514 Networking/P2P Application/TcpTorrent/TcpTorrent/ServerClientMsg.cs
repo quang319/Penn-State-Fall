@@ -29,7 +29,7 @@ namespace TcpTorrent
         // Name of files and # of files
         public int NoOfFiles = 0;
         public string NameOfFile = string.Empty;
-        public string ResultingDataSegment = string.Empty;
+        public byte[] ResultingDataSegment;
         public int SegmentOfFile = 0;
         public string HashOfFile = string.Empty;
 
@@ -121,10 +121,10 @@ namespace TcpTorrent
         }
 
         // Data Reply
-        public void DataRly(string sh1Hash, int segment, string Data)
+        public void DataRly(string Hash, int segment, byte[] Data)
         {
             Command = (int)Commands.DataRly;
-            HashOfFile = sh1Hash;
+            HashOfFile = Hash;
             SegmentOfFile = segment;
             ResultingDataSegment = Data;
         }

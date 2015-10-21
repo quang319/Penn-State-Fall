@@ -48,7 +48,7 @@ namespace TcpTorrent
         public string FileToDownload = string.Empty;
         public int FileSegmentToDownload = 0;
 
-        public string ResultFileSegment = string.Empty;
+        public byte[] ResultFileSegment;
         public string ResultFileHash = string.Empty;
         public int ResultFileSegmentNo = 0;
 

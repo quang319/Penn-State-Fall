@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using System.Threading;
 
 namespace TcpTorrent
 {
@@ -197,8 +198,7 @@ namespace TcpTorrent
 
                         var downloadClient = new TcpTorrent();
                         var downloadTask = downloadClient.GetDownloadFile(clientState);
-                        if (downloadTask.IsFaulted)
-                            downloadTask.Wait();
+                        //downloadClient.GetDownloadFile(clientState).Wait();
 
                         //var uploadCmd = new ClientPassableObject(clientState);
                         //var uploadClient = new TcpTorrent();
