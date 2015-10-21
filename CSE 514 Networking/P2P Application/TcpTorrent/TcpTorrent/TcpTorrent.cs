@@ -396,7 +396,7 @@ namespace TcpTorrent
                 else
                 {
                     await tcpclient.ConnectAsync(IPAddress.Parse(taskObject.ClientServerAddr), taskObject.ClientServerPort);
-                    Console.Write("Client [{0} , {1}]: Connected with ClientServer at address {2} and port {3}", localEP.Address, localEP.Port, taskObject.address, taskObject.port);
+                    Console.Write("Client [{0} , {1}]: Connected with ClientServer at address {2} and port {3}", localEP.Address, localEP.Port, taskObject.ClientServerAddr, taskObject.ClientServerPort);
 
                 }
                 var task = ClientOnConnectAsync(tcpclient, taskObject);
@@ -544,181 +544,233 @@ namespace TcpTorrent
         }
 
 
-      
 
 
 
 
-        //public async Task GetDownloadFile(StateObject clientState)
-        //{
 
-        //    var getLocationCmd = new ClientPassableObject(clientState);
-        //    getLocationCmd.GetFilesLocation(clientState.FileNameToDownload);
-        //    await ClientStart(getLocationCmd);
-        //    while (getLocationCmd.DoneFlag == false) ;
+        public async Task GetDownloadFile(StateObject clientState)
+        {
 
-        //    Console.WriteLine("Client: File: {0} has a length of {1}", clientState.FileNameToDownload, getLocationCmd.FileToDownloadLength);
-        //    for (int i = 0; i < getLocationCmd.AddressAtFile2Download.Count; i++)
-        //    {
-        //        Console.WriteLine("Client: Address: {0}  Port: {1}", getLocationCmd.AddressAtFile2Download[i],
-        //            getLocationCmd.PortAtFile2Download[i]);
-        //    }
+            var getLocationCmd = new ClientPassableObject(clientState);
+            getLocationCmd.GetFilesLocation(clientState.FileNameToDownload);
+            await ClientStart(getLocationCmd);
+            while (getLocationCmd.DoneFlag == false) ;
 
-        //    // Just pick a client and request all the segments from that one person only
-        //    var DataOperator = new DataSegmentObject();
-        //    var NoOfSegments = DataOperator.GetNoOfSegments(getLocationCmd.FileToDownloadLength, clientState.MaxChunkSize);
-        //    List<byte[]> bytesResult = new List<byte[]>();
-        //    List<int> ResultSegIndex = new List<int>();
-        //    string hashResult = string.Empty;
-        //    for (int i = 0; i < NoOfSegments; i++)
-        //    {
-        //        Console.WriteLine("Client: requesting File: {0} segment: {1} from {2}  {3}", clientState.FileNameToDownload, i,
-        //            getLocationCmd.AddressAtFile2Download[0], getLocationCmd.PortAtFile2Download[0]);
-        //        var getFileCmd = new ClientPassableObject(clientState);
-        //        getFileCmd.GetFile(getLocationCmd.AddressAtFile2Download[0], getLocationCmd.PortAtFile2Download[0], clientState.FileNameToDownload, i);
-        //        await ClientStart(getFileCmd);
-        //        while (getFileCmd.DoneFlag == false) ;
-        //        Console.WriteLine("Client: Received segment {0}", i);
-        //        bytesResult.Add(getFileCmd.ResultFileSegment);
-        //        ResultSegIndex.Add(getFileCmd.ResultFileSegmentNo);
-        //        hashResult = getFileCmd.ResultFileHash;
-        //    }
-        //    Console.WriteLine("Received all the files");
+            Console.WriteLine("Client: File: {0} has a length of {1}", clientState.FileNameToDownload, getLocationCmd.FileToDownloadLength);
+            for (int i = 0; i < getLocationCmd.AddressAtFile2Download.Count; i++)
+            {
+                Console.WriteLine("Client: Address: {0}  Port: {1}", getLocationCmd.AddressAtFile2Download[i],
+                    getLocationCmd.PortAtFile2Download[i]);
+            }
 
-        //    //List<string> AvailableAddresses = getLocationCmd.AddressAtFile2Download;
-        //    //List<int> AvailablePorts = getLocationCmd.PortAtFile2Download;
-        //    //int NoOfAvailableClient = AvailableAddresses.Count;
+            // Just pick a client and request all the segments from that one person only
+            var DataOperator = new DataSegmentObject();
+            var NoOfSegments = DataOperator.GetNoOfSegments(getLocationCmd.FileToDownloadLength, clientState.MaxChunkSize);
+            List<byte[]> bytesResult = new List<byte[]>();
+            List<int> ResultSegIndex = new List<int>();
+            string hashResult = string.Empty;
+            for (int i = 0; i < NoOfSegments; i++)
+            {
+                Console.WriteLine("Client: requesting File: {0} segment: {1} from {2}  {3}", clientState.FileNameToDownload, i,
+                    getLocationCmd.AddressAtFile2Download[0], getLocationCmd.PortAtFile2Download[0]);
+                var getFileCmd = new ClientPassableObject(clientState);
+                getFileCmd.GetFile(getLocationCmd.AddressAtFile2Download[0], getLocationCmd.PortAtFile2Download[0], clientState.FileNameToDownload, i);
+                await ClientStart(getFileCmd);
+                while (getFileCmd.DoneFlag == false) ;
+                Console.WriteLine("Client: Received segment {0}", i);
+                bytesResult.Add(getFileCmd.ResultFileSegment);
+                ResultSegIndex.Add(getFileCmd.ResultFileSegmentNo);
+                hashResult = getFileCmd.ResultFileHash;
+            }
+            Console.WriteLine("Received all the files");
 
-
-        //    //string FileToDownload = getLocationCmd.FileToDownload;
-        //    //int SegmentDone = 0;
-        //    //int SegmentInTransit = 0;
-        //    //List<bool> BusyClient = new List<bool>();
-        //    //List<Task> task = new List<Task>();
-        //    //List<int> indexOfTasks = new List<int>();
-        //    //List<ClientPassableObject> cmd = new List<ClientPassableObject>();
+            List<string> AvailableAddresses = getLocationCmd.AddressAtFile2Download;
+            List<int> AvailablePorts = getLocationCmd.PortAtFile2Download;
+            int NoOfAvailableClient = AvailableAddresses.Count;
 
 
-
-        //    //for (int i = 0; i < NoOfAvailableClient; i++)
-        //    //    BusyClient.Add(false);
-
-        //    //while (SegmentDone < NoOfSegments)
-        //    //{
-        //    //    if ((SegmentInTransit + SegmentDone) <= NoOfSegments)
-        //    //    {
-        //    //        if (BusyClient.IndexOf(false) > -1)
-        //    //        {
-        //    //            int j = BusyClient.IndexOf(false);
-
-        //    //            var getfileCmd = new ClientPassableObject(clientState);
-        //    //            getfileCmd.GetFile(AvailableAddresses[j], AvailablePorts[j], FileToDownload, SegmentDone);
-        //    //            Console.WriteLine("Requesting segment #{0} from {1}  ,  {2}", SegmentDone, AvailableAddresses[j], AvailablePorts[j]);
-        //    //            task.Add(ClientStart(getfileCmd));
-        //    //            indexOfTasks.Add(j);
-        //    //            BusyClient[j] = true;
-        //    //            cmd.Add(getfileCmd);
-        //    //            SegmentInTransit++;
-        //    //        }
-        //    //        else
-        //    //        {
-        //    //            for (int k = 0; k < indexOfTasks.Count; k++)
-        //    //            {
-        //    //                if (cmd[k].DoneFlag)
-        //    //                {
-        //    //                    bytesResult.Add(cmd[k].ResultFileSegment);
-        //    //                    ResultSegIndex.Add(cmd[k].ResultFileSegmentNo);
-        //    //                    hashResult = cmd[k].ResultFileHash;
-
-        //    //                    BusyClient[indexOfTasks[k]] = false;
-        //    //                    task.RemoveAt(k);
-        //    //                    indexOfTasks.RemoveAt(k);
-        //    //                    cmd.RemoveAt(k);
-        //    //                    k--;
-        //    //                    SegmentDone++;
-        //    //                    SegmentInTransit--;
-        //    //                }
-        //    //            }
-        //    //        }
-
-        //    //    }
-
-        //    //}
-
-        //    // Reordering the info
-        //    List<byte[]> ResultInOrder = new List<byte[]>();
-        //    for (int k = 0; k < bytesResult.Count; k++)
-        //    {
-        //        int indexOfSegment = ResultSegIndex.IndexOf(k);
-        //        ResultInOrder.Add(bytesResult[indexOfSegment]);
-        //    }
-
-        //    // Combine all the segment and compare the hashcode
-        //    int filesize = 0;
-        //    int accumulativeSize = 0;
-        //    foreach (var seg in ResultInOrder)
-        //        filesize += seg.Length;
-        //    byte[] wholeFile = new byte[filesize];
-        //    foreach (var seg in ResultInOrder)
-        //    {
-        //        System.Buffer.BlockCopy(seg, 0, wholeFile, accumulativeSize, seg.Length);
-        //        accumulativeSize += seg.Length;
-        //    }
-
-        //    var dataparser = new DataSegmentObject();
-        //    if (dataparser.getHashAndCompare(wholeFile, hashResult) == true)
-        //    {
-        //        Console.WriteLine("File: {0} is finished. You can find the file in the your desktop.");
-        //        var path = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + @"/" + clientState.FileNameToDownload + "new";
-
-        //        // Writing the whole file to the desktop 
-        //        using (var bw = new BinaryWriter(File.Open(path, FileMode.OpenOrCreate)))
-        //        {
-        //            bw.Write(wholeFile);
-        //        }
-
-        //        FileInfo f = new FileInfo(path);
-        //        clientState.FilePathsToReg.Clear();
-        //        clientState.FilePathsToRegLength.Clear();
-        //        clientState.FilePathsToReg.Add(path);
-        //        clientState.FilePathsToRegLength.Add(f.Length);
-        //        var uploadcmd = new ClientPassableObject(clientState);
-        //        uploadcmd.RegisterFiles();
-        //        await ClientStart(uploadcmd);
-        //        while (uploadcmd.DoneFlag == false) ;
-
-        //        var DataParser = new DataSegmentObject();
-
-        //        // splitting the files up and store it in the temp folder
-        //        DataParser.SplitFile(path, clientState.MaxChunkSize, clientState.TempFolderPath);
-        //        var dictObject = new ObjectForFiledict();
-        //        dictObject.Hash = DataParser.GetHash(clientState.FilePathsToReg[0]);
-        //        dictObject.NoOfSegments = DataParser.GetNoOfSegments(clientState.FilePathsToRegLength[0], clientState.MaxChunkSize);
-        //        clientState.FileDict.Add(Path.GetFileName(clientState.FilePathsToReg[0]), dictObject);
-
-        //    }
-        //    else
-        //    {
-        //        Console.WriteLine("One of the file was corrupt. We need to retry");
-        //    }
+            string FileToDownload = getLocationCmd.FileToDownload;
+            int SegmentDone = 0;
+            int SegmentInTransit = 0;
+            List<bool> BusyClient = new List<bool>();
+            List<Task> task = new List<Task>();
+            List<int> indexOfTasks = new List<int>();
+            List<ClientPassableObject> cmd = new List<ClientPassableObject>();
 
 
 
-        //    //foreach (var item in Result)
-        //    //{
-        //    //    Console.WriteLine(item);
-        //    //}
 
-        //    // now split
+            //while (SegmentDone < NoOfSegments)
+            //{
+            //    for (int q = 0; q < AvailableAddresses.Count; q++)
+            //    {
+            //        if (SegmentDone < NoOfSegments)
+            //        {
+            //            var getfileCmd = new ClientPassableObject(clientState);
+            //            getfileCmd.GetFile(AvailableAddresses[q], AvailablePorts[q], FileToDownload, SegmentDone);
+            //            Console.WriteLine("Requesting segment #{0} from {1}  ,  {2}", SegmentDone + SegmentInTransit, AvailableAddresses[q], AvailablePorts[q]);
+            //            task.Add(ClientStart(getfileCmd));
+            //            cmd.Add(getfileCmd);
+            //            SegmentDone++;
+            //            task[0].Wait();
+            //        }
+            //        else
+            //            break;
+                    
+            //    }
+            //    // Wait until all the tasks are complete
+            //    while (true)
+            //    {
+            //        int counter = 0;
+            //        foreach (var command in cmd)
+            //        {
+            //            if (command.DoneFlag)
+            //                counter++;
+            //        }
+            //        if (counter == cmd.Count)
+            //            break;
+            //    }
 
-        //    //Console.WriteLine("Name of file: {0}", getLocationCmd.FileToDownload);
-        //    //Console.WriteLine("Size of file: {0}", getLocationCmd.FileToDownloadLength);
-        //    //Console.WriteLine("Address: {0}", getLocationCmd.AddressAtFile2Download[0]);
-        //    //Console.WriteLine("Port: {0}", getLocationCmd.PortAtFile2Download[0]);
+            //    for (int k = 0; k < cmd.Count; k++)
+            //    {
 
-        //    commandPrint();
+            //        bytesResult.Add(cmd[k].ResultFileSegment);
+            //        ResultSegIndex.Add(cmd[k].ResultFileSegmentNo);
+            //        hashResult = cmd[k].ResultFileHash;
+            //    }
+            //    task.Clear();
+            //    indexOfTasks.Clear();
+            //    cmd.Clear();
+            //}
 
-        //}
+
+
+            //for (int i = 0; i < NoOfAvailableClient; i++)
+            //    BusyClient.Add(false);
+
+            //while (SegmentDone < NoOfSegments)
+            //{
+            //    if ((SegmentInTransit + SegmentDone) <= NoOfSegments)
+            //    {
+            //        if (BusyClient.IndexOf(false) > -1)
+            //        {
+            //            int j = BusyClient.IndexOf(false);
+
+            //            var getfileCmd = new ClientPassableObject(clientState);
+            //            getfileCmd.GetFile(AvailableAddresses[j], AvailablePorts[j], FileToDownload, SegmentDone + SegmentInTransit);
+            //            Console.WriteLine("Requesting segment #{0} from {1}  ,  {2}", SegmentDone + SegmentInTransit, AvailableAddresses[j], AvailablePorts[j]);
+            //            task.Add(ClientStart(getfileCmd));
+            //            indexOfTasks.Add(j);
+            //            BusyClient[j] = true;
+            //            cmd.Add(getfileCmd);
+            //            SegmentInTransit++;
+            //        }
+            //        else
+            //        {
+            //            for (int k = 0; k < indexOfTasks.Count; k++)
+            //            {
+            //                if (cmd[k].DoneFlag)
+            //                {
+            //                    bytesResult.Add(cmd[k].ResultFileSegment);
+            //                    ResultSegIndex.Add(cmd[k].ResultFileSegmentNo);
+            //                    hashResult = cmd[k].ResultFileHash;
+            //                    BusyClient[indexOfTasks[k]] = false;
+
+            //                    SegmentDone++;
+            //                    SegmentInTransit--;
+            //                }
+            //            }
+            //            for (int f = indexOfTasks.Count -1; f >= 0; f--)
+            //            {
+            //                if (cmd[f].DoneFlag)
+            //                {
+            //                    task.RemoveAt(f);
+            //                    indexOfTasks.RemoveAt(f);
+            //                    cmd.RemoveAt(f);
+            //                }
+
+            //            }
+            //        }
+
+            //    }
+
+            //}
+
+            // Reordering the info
+            List<byte[]> ResultInOrder = new List<byte[]>();
+            for (int k = 0; k < bytesResult.Count; k++)
+            {
+                int indexOfSegment = ResultSegIndex.IndexOf(k);
+                ResultInOrder.Add(bytesResult[indexOfSegment]);
+            }
+
+            // Combine all the segment and compare the hashcode
+            int filesize = 0;
+            int accumulativeSize = 0;
+            foreach (var seg in ResultInOrder)
+                filesize += seg.Length;
+            byte[] wholeFile = new byte[filesize];
+            foreach (var seg in ResultInOrder)
+            {
+                System.Buffer.BlockCopy(seg, 0, wholeFile, accumulativeSize, seg.Length);
+                accumulativeSize += seg.Length;
+            }
+
+            var dataparser = new DataSegmentObject();
+            if (dataparser.getHashAndCompare(wholeFile, hashResult) == true)
+            {
+                Console.WriteLine("File: {0} is finished. You can find the file in the your desktop.");
+                var path = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + @"/" + clientState.FileNameToDownload + "new";
+
+                // Writing the whole file to the desktop 
+                using (var bw = new BinaryWriter(File.Open(path, FileMode.OpenOrCreate)))
+                {
+                    bw.Write(wholeFile);
+                }
+
+                FileInfo f = new FileInfo(path);
+                clientState.FilePathsToReg.Clear();
+                clientState.FilePathsToRegLength.Clear();
+                clientState.FilePathsToReg.Add(path);
+                clientState.FilePathsToRegLength.Add(f.Length);
+                var uploadcmd = new ClientPassableObject(clientState);
+                uploadcmd.RegisterFiles();
+                await ClientStart(uploadcmd);
+                while (uploadcmd.DoneFlag == false) ;
+
+                var DataParser = new DataSegmentObject();
+
+                // splitting the files up and store it in the temp folder
+                DataParser.SplitFile(path, clientState.MaxChunkSize, clientState.TempFolderPath);
+                var dictObject = new ObjectForFiledict();
+                dictObject.Hash = DataParser.GetHash(clientState.FilePathsToReg[0]);
+                dictObject.NoOfSegments = DataParser.GetNoOfSegments(clientState.FilePathsToRegLength[0], clientState.MaxChunkSize);
+                clientState.FileDict.Add(Path.GetFileName(clientState.FilePathsToReg[0]), dictObject);
+
+            }
+            else
+            {
+                Console.WriteLine("One of the file was corrupt. We need to retry");
+            }
+
+
+
+            //foreach (var item in Result)
+            //{
+            //    Console.WriteLine(item);
+            //}
+
+            // now split
+
+            //Console.WriteLine("Name of file: {0}", getLocationCmd.FileToDownload);
+            //Console.WriteLine("Size of file: {0}", getLocationCmd.FileToDownloadLength);
+            //Console.WriteLine("Address: {0}", getLocationCmd.AddressAtFile2Download[0]);
+            //Console.WriteLine("Port: {0}", getLocationCmd.PortAtFile2Download[0]);
+
+            commandPrint();
+
+        }
 
 
 
