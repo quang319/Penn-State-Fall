@@ -8,7 +8,7 @@ namespace TcpTorrent
 {
     class ServerDataObject
     {
-        public int Length = 0;
+        public long Length = 0;
         public List<string> Addresses = new List<string>();
         public List<int> Ports = new List<int>();
         public List<string> Hashes = new List<string>();

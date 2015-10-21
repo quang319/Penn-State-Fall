@@ -69,7 +69,9 @@ namespace TcpTorrent
                             {
                                 Console.WriteLine("{0}) {1}", i, Path.GetFileName(file));
                                 clientState.UploadableFilePath.Add(file);
-                                clientState.UploadableFileSize.Add(file.Length);
+                                //clientState.UploadableFileSize.Add(file.Length);
+                                FileInfo f = new FileInfo(file);
+                                clientState.UploadableFileSize.Add(f.Length);
 
                                 i++;
                             }
@@ -108,24 +110,31 @@ namespace TcpTorrent
 
                             while (uploadcmd.DoneFlag == false) ;
 
-                            // Now that we recieved upload on which file can be uploaded, we need to split the files up into segments and store it in memory
+                            // Now that we recieved upload on which file can be uploaded, we need to split the files up into segments and store it in the temp folder
                             for (int j = 0; j < uploadcmd.FilesRegSuccessCount.Count; j++)
                             {
                                 if (uploadcmd.FilesRegSuccessCount[j] == true)
                                 {
-                                    StringBuilder FileSb = new StringBuilder();
-                                    using (var streamRdr = new StreamReader(clientState.FilePathsToReg[j]))
-                                    {
-                                        while (!streamRdr.EndOfStream)
-                                        {
-                                            FileSb.Append(streamRdr.ReadLine());
-                                        }
-                                    }
+                                    //StringBuilder FileSb = new StringBuilder();
+                                    //using (var streamRdr = new StreamReader(clientState.FilePathsToReg[j]))
+                                    //{
+                                    //    while (!streamRdr.EndOfStream)
+                                    //    {
+                                    //        FileSb.Append(streamRdr.ReadLine());
+                                    //    }
+                                    //}
                                     var DataParser = new DataSegmentObject();
-                                    Tuple<string, List<string>> tupleForDict = DataParser.ChunksUpto(FileSb.ToString(), clientState.MaxChunkSize);
+                                    //Tuple<string, List<string>> tupleForDict = DataParser.ChunksUpto(FileSb.ToString(), clientState.MaxChunkSize);
+
+                                    // splitting the files up and store it in the temp folder
+                                    DataParser.SplitFile(clientState.FilePathsToReg[j], clientState.MaxChunkSize, clientState.TempFolderPath);
                                     var dictObject = new ObjectForFiledict();
-                                    dictObject.Hash = tupleForDict.Item1;
-                                    dictObject.Segments = tupleForDict.Item2;
+                                    dictObject.Hash = DataParser.GetHash(clientState.FilePathsToReg[j]);
+                                    dictObject.NoOfSegments = DataParser.GetNoOfSegments(clientState.FilePathsToRegLength[j],clientState.MaxChunkSize);
+
+                                    Console.WriteLine("Client: splitting file: {0} of length {1} to {2} segments with a hash of {3}",
+                                        clientState.FilePathsToReg[j], clientState.FilePathsToRegLength[j], dictObject.NoOfSegments, dictObject.Hash);
+
                                     if (!clientState.FileDict.ContainsKey(Path.GetFileName(clientState.FilePathsToReg[j])))
                                     {
                                         clientState.FileDict.Add(Path.GetFileName(clientState.FilePathsToReg[j]), dictObject);

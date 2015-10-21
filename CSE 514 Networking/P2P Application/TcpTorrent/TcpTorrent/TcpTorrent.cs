@@ -121,22 +121,27 @@ namespace TcpTorrent
                                     string hash = string.Empty;
 
                                     Console.WriteLine("ClientServer received the data request");
+                                    
 
-                                    foreach (var pair in tcpState.FileDict)
-                                    {
-                                        if (pair.Key == ReceivedMsgObject.NameOfFile)
-                                        {
-                                            ObjectForFiledict resultObj = pair.Value;
-                                            file = resultObj.Segments[ReceivedMsgObject.SegmentOfFile];
-                                            hash = resultObj.Hash;
+                                    /////////// NEED TO IMPLEMENT THIS DIFFERENTLY ////////////////
+                                    /////////////////////////////////////
+                                    //////////////////////////
 
-                                            if (!file.Any() || String.IsNullOrEmpty(hash))
-                                            {
-                                                Console.WriteLine("string or hash is empty");
-                                            }
+                                    //foreach (var pair in tcpState.FileDict)
+                                    //{
+                                    //    if (pair.Key == ReceivedMsgObject.NameOfFile)
+                                    //    {
+                                    //        ObjectForFiledict resultObj = pair.Value;
+                                    //        file = resultObj.Segments[ReceivedMsgObject.SegmentOfFile];
+                                    //        hash = resultObj.Hash;
+
+                                    //        if (!file.Any() || String.IsNullOrEmpty(hash))
+                                    //        {
+                                    //            Console.WriteLine("string or hash is empty");
+                                    //        }
                                             
-                                        }
-                                    }
+                                    //    }
+                                    //}
                                     Console.WriteLine("ClientServer is sending string: {0} \nWith a hash of: {1}", file, hash);
                                     MsgObjectToReturn.DataRly(hash, ReceivedMsgObject.SegmentOfFile, file);
 
@@ -227,7 +232,7 @@ namespace TcpTorrent
 
                     // For a fileName list and a file size list
                     List<string> fileName = new List<string>();
-                    List<int> fileSize = new List<int>();
+                    List<long> fileSize = new List<long>();
 
                     foreach (var pair in ServerDict)
                     {
@@ -244,7 +249,7 @@ namespace TcpTorrent
                     // For a fileName list and a file size list
                     List<string> addresses = new List<string>();
                     List<int> ports = new List<int>();
-                    int length = 0;
+                    long length = 0;
 
                     foreach (var pair in ServerDict)
                     {
@@ -327,6 +332,9 @@ namespace TcpTorrent
         public async Task ClientStart(ClientPassableObject taskObject)
         {
             // Notice that we don't care about what port we are using as it will be destroyed at the end of the connection
+            /////////////// Need to implement this for any IP address //////////////////////////
+            /////////////////////////////////////////////
+            ////////////////////////////////////
             string localIP = GetLocalIPAddress();
             IPEndPoint localEP = new IPEndPoint(IPAddress.Parse("127.0.0.1"), GetOpenPort());
             var tcpclient = new TcpClient(localEP);

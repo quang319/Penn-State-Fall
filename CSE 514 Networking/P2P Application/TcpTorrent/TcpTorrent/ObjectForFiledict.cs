@@ -9,6 +9,6 @@ namespace TcpTorrent
     class ObjectForFiledict
     {
         public string Hash = string.Empty;
-        public List<string> Segments = new List<string>();
+        public int NoOfSegments = 0;
     }
 }

@@ -39,10 +39,10 @@ namespace TcpTorrent
         public bool DoneFlag = false;
 
         public List<string> FilesToReg = new List<string>();
-        public List<int> FilesLength = new List<int>();
+        public List<long> FilesLength = new List<long>();
 
         public List<string> DownloadableFiles = new List<string>();
-        public List<int> DownloadableFilesLength = new List<int>();
+        public List<long> DownloadableFilesLength = new List<long>();
         public List<bool> FilesRegSuccessCount = new List<bool>();
 
         public string FileToDownload = string.Empty;
@@ -52,7 +52,7 @@ namespace TcpTorrent
         public string ResultFileHash = string.Empty;
         public int ResultFileSegmentNo = 0;
 
-        public int FileToDownloadLength = 0;
+        public long FileToDownloadLength = 0;
         public List<string> AddressAtFile2Download = new List<string>();
         public List<int> PortAtFile2Download = new List<int>();
 

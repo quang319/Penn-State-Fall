@@ -24,7 +24,7 @@ namespace TcpTorrent
 
         // Files and files lengths
         public List<string> Files = new List<string>();
-        public List<int> FilesLength = new List<int>();
+        public List<long> FilesLength = new List<long>();
 
         // Name of files and # of files
         public int NoOfFiles = 0;
@@ -37,7 +37,7 @@ namespace TcpTorrent
         public List<bool> SuccessCount = new List<bool>();
 
         // Size of the file
-        public int SizeOfFile = 0;
+        public long SizeOfFile = 0;
 
         // Remote EPs
         public int NoOfEPs = 0;
@@ -45,7 +45,7 @@ namespace TcpTorrent
         public List<int> Ports = new List<int>();
         
         // Register Request
-        public void RegisterRq(string ipAddress, int port, List<string> files, List<int> filesLength)
+        public void RegisterRq(string ipAddress, int port, List<string> files, List<long> filesLength)
         {
             Command = (int) Commands.RegisterRq;
             ClientIP = ipAddress;
@@ -85,7 +85,7 @@ namespace TcpTorrent
         }
 
         // File List Reply
-        public void FileListRly (List<string> files, List<int> filesLength)
+        public void FileListRly (List<string> files, List<long> filesLength)
         {
             Command = (int)Commands.FileListRly;
             Files = files;
@@ -94,7 +94,7 @@ namespace TcpTorrent
         }
 
         // File Location Reply
-        public void FileLocRly(int sizeOfFile, List<string> localIPs, List<int> ports)
+        public void FileLocRly(long sizeOfFile, List<string> localIPs, List<int> ports)
         {
             Command = (int)Commands.FileLocRly;
             SizeOfFile = sizeOfFile;
