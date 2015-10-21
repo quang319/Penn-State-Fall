@@ -193,10 +193,11 @@ namespace TcpTorrent
                             SuccessList.Add(Sdo.AddEndPoint(ReceivedMsgObject.ClientIP, ReceivedMsgObject.ClientPort));
                             Sdo.Length = ReceivedMsgObject.FilesLength[i];
                             ServerDict.Add(ReceivedMsgObject.Files[i], Sdo);
+                            Console.WriteLine("Server: Added file: {0} to the server dict", ReceivedMsgObject.Files[i]);
                         }
                         else
                         {
-                            bool successflag = false;
+                            bool successflag = true;
                             foreach (var pair in ServerDict)
                             {
                                 if (pair.Key == ReceivedMsgObject.Files[i])
@@ -207,14 +208,19 @@ namespace TcpTorrent
                                         if (ServObj.Ports[k] == ReceivedMsgObject.ClientPort)
                                         {
                                             if (ServObj.Addresses[k] == ReceivedMsgObject.ClientIP)
+                                            {
+                                                //Console.WriteLine("Server: Reject file {0} reg for client: {1) , {2}", ReceivedMsgObject.Files[i],
+                                                    //ReceivedMsgObject.ClientIP, ReceivedMsgObject.ClientPort);
                                                 successflag = false;
-                                        }
-                                        else
-                                        {
-                                            ServObj.AddEndPoint(ReceivedMsgObject.ClientIP, ReceivedMsgObject.ClientPort);
-                                            successflag = true;
+                                            }
                                         }
                                     }
+                                    if (successflag == true)
+                                    {
+                                        Console.WriteLine("Server: Added file: {0} to the server dict", ReceivedMsgObject.Files[i]);
+                                        ServObj.AddEndPoint(ReceivedMsgObject.ClientIP, ReceivedMsgObject.ClientPort);
+                                    }
+                                    break;
                                 }
                             }
 
@@ -355,10 +361,6 @@ namespace TcpTorrent
             var task = ClientOnConnectAsync(tcpclient,taskObject);
             if (task.IsFaulted)
                 task.Wait();
-
-            // Closing down the connection now that we don't need it any more
-            Console.WriteLine("Client: Closing down connection wih server");
-            //tcpclient.Close();
 
         }
 
