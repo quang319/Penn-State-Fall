@@ -55,7 +55,7 @@ namespace TcpTorrent
                 while (input.Position < input.Length)
                 {
                     using (Stream output = File.Create(path + @"\" + Path.GetFileNameWithoutExtension(inputFile)
-                        + index + Path.GetExtension(inputFile)))
+                        + "_temp"+ index + Path.GetExtension(inputFile)))
                     {
                         int remaining = chunkSize, bytesRead;
                         while (remaining > 0 && (bytesRead = input.Read(buffer, 0,
