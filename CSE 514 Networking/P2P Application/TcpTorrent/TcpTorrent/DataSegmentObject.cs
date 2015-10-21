@@ -79,5 +79,15 @@ namespace TcpTorrent
                 return BitConverter.ToString(hash).Replace("-", String.Empty);
             }
         }
+        public bool getHashAndCompare(byte[] file , string expectetdHash)
+        {
+            SHA256Managed sha = new SHA256Managed();
+            byte[] hashByte = sha.ComputeHash(file);
+            string hashString = BitConverter.ToString(hashByte).Replace("-", String.Empty);
+            if (hashString == expectetdHash)
+                return true;
+            else
+                return false;
+        }
     }
 }

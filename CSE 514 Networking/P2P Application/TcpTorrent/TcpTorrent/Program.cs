@@ -62,6 +62,7 @@ namespace TcpTorrent
 
             while (true)
             {
+                Thread.Sleep(200);
                 userCommand = getCommand();
                 switch (userCommand.Item1)
                 {
@@ -198,6 +199,7 @@ namespace TcpTorrent
 
                         var downloadClient = new TcpTorrent();
                         var downloadTask = downloadClient.GetDownloadFile(clientState);
+                        //downloadTask.Wait(1000);
                         //downloadClient.GetDownloadFile(clientState).Wait();
 
                         //var uploadCmd = new ClientPassableObject(clientState);
