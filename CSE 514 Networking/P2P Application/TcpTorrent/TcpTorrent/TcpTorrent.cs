@@ -119,11 +119,11 @@ namespace TcpTorrent
 
                                     byte[] file;
                                     string hash = string.Empty;
-                                    Console.WriteLine("Client Server: received data request for file: {0} segment: {1}", ReceivedMsgObject.NameOfFile,ReceivedMsgObject.SegmentOfFile);
+                                    //Console.WriteLine("Client Server: received data request for file: {0} segment: {1}", ReceivedMsgObject.NameOfFile,ReceivedMsgObject.SegmentOfFile);
 
                                     string filepath = tcpState.TempFolderPath + @"/" + Path.GetFileNameWithoutExtension(ReceivedMsgObject.NameOfFile);
                                     filepath += "_temp" + ReceivedMsgObject.SegmentOfFile + Path.GetExtension(ReceivedMsgObject.NameOfFile);
-                                    Console.WriteLine("Client Server: Retreiving file: {0}", filepath);
+                                    //Console.WriteLine("Client Server: Retreiving file: {0}", filepath);
 
                                     if (File.Exists(filepath))
                                     {
@@ -131,7 +131,7 @@ namespace TcpTorrent
                                     }
                                     else
                                     {
-                                        Console.WriteLine("Client Server could not find the file {0}", filepath);
+                                        //Console.WriteLine("Client Server could not find the file {0}", filepath);
                                         file = new byte[2];
                                     }
 
@@ -141,7 +141,7 @@ namespace TcpTorrent
                                         {
                                             ObjectForFiledict obj = pair.Value;
                                             hash = obj.Hash;
-                                            Console.WriteLine("Client Server: Hash = {0}", hash);
+                                            //Console.WriteLine("Client Server: Hash = {0}", hash);
                                             break;
                                         }
                                     }
@@ -214,7 +214,7 @@ namespace TcpTorrent
                             SuccessList.Add(Sdo.AddEndPoint(ReceivedMsgObject.ClientIP, ReceivedMsgObject.ClientPort));
                             Sdo.Length = ReceivedMsgObject.FilesLength[i];
                             ServerDict.Add(ReceivedMsgObject.Files[i], Sdo);
-                            Console.WriteLine("Server: Added file: {0} to the server dict for client: {1} , {2}", ReceivedMsgObject.Files[i], 
+                            Console.WriteLine("Server: Added file: {0} to the server dict for client: {1} , {2}", ReceivedMsgObject.Files[i],
                                 ReceivedMsgObject.ClientIP, ReceivedMsgObject.ClientPort);
                         }
                         else
@@ -383,20 +383,19 @@ namespace TcpTorrent
             /////////////////////////////////////////////
             ////////////////////////////////////
             string localIP = GetLocalIPAddress();
-            IPEndPoint localEP = new IPEndPoint(IPAddress.Parse("127.0.0.1"), GetOpenPort());
-            //var tcpclient = new TcpClient(localEP);
+            IPEndPoint localEP = new IPEndPoint(IPAddress.Parse(localIP), GetOpenPort());
             using (var tcpclient = new TcpClient(localEP))
             {
                 if (taskObject.target == (int)ClientPassableObject.enTarget.Server)
                 {
-                    await tcpclient.ConnectAsync(IPAddress.Parse("127.0.0.1"), 1000);
-                    Console.WriteLine("Client [{0} , {1}]: Connected to the server", localEP.Address, localEP.Port);
+                    await tcpclient.ConnectAsync(IPAddress.Parse("10.0.0.2"), 1000);
+                    //Console.WriteLine("Client [{0} , {1}]: Connected to the server", localEP.Address, localEP.Port);
                 }
 
                 else
                 {
                     await tcpclient.ConnectAsync(IPAddress.Parse(taskObject.ClientServerAddr), taskObject.ClientServerPort);
-                    Console.Write("Client [{0} , {1}]: Connected with ClientServer at address {2} and port {3}", localEP.Address, localEP.Port, taskObject.ClientServerAddr, taskObject.ClientServerPort);
+                    //Console.Write("Client [{0} , {1}]: Connected with ClientServer at address {2} and port {3}", localEP.Address, localEP.Port, taskObject.ClientServerAddr, taskObject.ClientServerPort);
 
                 }
                 var task = ClientOnConnectAsync(tcpclient, taskObject);
@@ -572,18 +571,18 @@ namespace TcpTorrent
             string hashResult = string.Empty;
             for (int i = 0; i < NoOfSegments; i++)
             {
-                Console.WriteLine("Client: requesting File: {0} segment: {1} from {2}  {3}", clientState.FileNameToDownload, i,
-                    getLocationCmd.AddressAtFile2Download[0], getLocationCmd.PortAtFile2Download[0]);
+                //Console.WriteLine("Client: requesting File: {0} segment: {1} from {2}  {3}", clientState.FileNameToDownload, i,
+                    //getLocationCmd.AddressAtFile2Download[0], getLocationCmd.PortAtFile2Download[0]);
                 var getFileCmd = new ClientPassableObject(clientState);
                 getFileCmd.GetFile(getLocationCmd.AddressAtFile2Download[0], getLocationCmd.PortAtFile2Download[0], clientState.FileNameToDownload, i);
                 await ClientStart(getFileCmd);
                 while (getFileCmd.DoneFlag == false) ;
-                Console.WriteLine("Client: Received segment {0}", i);
+                //Console.WriteLine("Client: Received segment {0}", i);
                 bytesResult.Add(getFileCmd.ResultFileSegment);
                 ResultSegIndex.Add(getFileCmd.ResultFileSegmentNo);
                 hashResult = getFileCmd.ResultFileHash;
             }
-            Console.WriteLine("Received all the files");
+            Console.WriteLine("Received all segments of the file");
 
             List<string> AvailableAddresses = getLocationCmd.AddressAtFile2Download;
             List<int> AvailablePorts = getLocationCmd.PortAtFile2Download;

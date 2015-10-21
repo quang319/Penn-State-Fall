@@ -14,17 +14,16 @@ namespace TcpTorrent
         static void Main(string[] args)
         {
 
-            //using (var sr = new StreamReader(@"../../Intro.txt"))
-            //{
-            //    while(!sr.EndOfStream)
-            //        Console.WriteLine(sr.ReadLine());
-            //}
+            using (var sr = new StreamReader(@"../../Intro.txt"))
+            {
+                while (!sr.EndOfStream)
+                    Console.WriteLine(sr.ReadLine());
+            }
             //using (var sr = new StreamReader(@"../../Example.txt"))
             //{
             //    while (!sr.EndOfStream)
             //        Console.WriteLine(sr.ReadLine());
             //}
-            commandPrint();
 
             Tuple<string, string> userCommand;
 
@@ -37,7 +36,7 @@ namespace TcpTorrent
 
             StateObject clientState = new StateObject();
             var clientServer = new TcpTorrent();
-            clientState.Address = "127.0.0.1";
+            clientState.Address = clientServer.GetLocalIPAddress() ;
             //clientState.Address = clientServer.GetLocalIPAddress();
             clientState.Port = clientServer.GetOpenPort();
             Console.WriteLine("Creating Client's server on Address: {0} , and Port: {1}", clientState.Address, clientState.Port);
@@ -58,6 +57,7 @@ namespace TcpTorrent
                 Directory.CreateDirectory(clientState.TempFolderPath);
             }
 
+            commandPrint();
 
 
             while (true)
@@ -139,8 +139,8 @@ namespace TcpTorrent
                                     dictObject.Hash = DataParser.GetHash(clientState.FilePathsToReg[j]);
                                     dictObject.NoOfSegments = DataParser.GetNoOfSegments(clientState.FilePathsToRegLength[j], clientState.MaxChunkSize);
 
-                                    Console.WriteLine("Client: splitting file: {0} of length {1} to {2} segments with a hash of {3}",
-                                    clientState.FilePathsToReg[j], clientState.FilePathsToRegLength[j], dictObject.NoOfSegments, dictObject.Hash);
+                                    Console.WriteLine("Client: splitting file: {0} of length {1} to {2} segments",
+                                    clientState.FilePathsToReg[j], clientState.FilePathsToRegLength[j], dictObject.NoOfSegments);
 
 
                                     clientState.FileDict.Add(Path.GetFileName(clientState.FilePathsToReg[j]), dictObject);
