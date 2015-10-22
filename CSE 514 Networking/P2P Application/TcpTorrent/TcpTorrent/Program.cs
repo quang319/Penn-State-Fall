@@ -36,7 +36,7 @@ namespace TcpTorrent
 
             StateObject clientState = new StateObject();
             var clientServer = new TcpTorrent();
-            clientState.Address = clientServer.GetLocalIPAddress() ;
+            clientState.Address = "127.0.0.1" ;
             //clientState.Address = clientServer.GetLocalIPAddress();
             clientState.Port = clientServer.GetOpenPort();
             Console.WriteLine("Creating Client's server on Address: {0} , and Port: {1}", clientState.Address, clientState.Port);

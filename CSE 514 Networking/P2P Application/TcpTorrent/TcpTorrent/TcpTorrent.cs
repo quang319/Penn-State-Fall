@@ -382,13 +382,14 @@ namespace TcpTorrent
             /////////////// Need to implement this for any IP address //////////////////////////
             /////////////////////////////////////////////
             ////////////////////////////////////
-            string localIP = GetLocalIPAddress();
+            //string localIP = GetLocalIPAddress();
+            string localIP = "127.0.0.1";
             IPEndPoint localEP = new IPEndPoint(IPAddress.Parse(localIP), GetOpenPort());
             using (var tcpclient = new TcpClient(localEP))
             {
                 if (taskObject.target == (int)ClientPassableObject.enTarget.Server)
                 {
-                    await tcpclient.ConnectAsync(IPAddress.Parse("10.0.0.2"), 1000);
+                    await tcpclient.ConnectAsync(IPAddress.Parse("127.0.0.1"), 1000);
                     //Console.WriteLine("Client [{0} , {1}]: Connected to the server", localEP.Address, localEP.Port);
                 }
 
@@ -767,7 +768,7 @@ namespace TcpTorrent
             //Console.WriteLine("Address: {0}", getLocationCmd.AddressAtFile2Download[0]);
             //Console.WriteLine("Port: {0}", getLocationCmd.PortAtFile2Download[0]);
 
-            commandPrint();
+            commandPrint();s
 
         }
 
