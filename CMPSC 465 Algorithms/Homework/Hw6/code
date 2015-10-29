@@ -1,0 +1,41 @@
+
+d-ary_Extract-Max(A)
+	if A.heap-size < 1
+		error "heap underflow"
+	max = A[0]
+	A[0] = A[A.heap-size - 1]
+	A.heap-size = A.heapsize - 1
+	Max-Heapify(A,0)
+	return max
+
+Max-Heapify(A,i)
+	Assign the childen of i in Children[0....d-1]
+	largest = i
+	for k = 0 to Children.length-1
+		if Index of the children at k <= A.heap-size - 1 and Children[k] > A[largest]
+			largest = k
+	if largest != i
+		exchange A[i] with A[largest]
+		Max-Heapify(A,largest)
+
+
+Max-Heap-Insert(A,key)
+	A.heap-size = A.heap-size + 1
+	A[A.heap-size - 1] = -infinity
+	Heap-Increase-Key(A,A.heap-size-1,key)
+
+Heap-Increase-Key(A,i,key)
+	if key < A[i]
+		Error "new key is smaller than current key"
+	A[i] = key
+	while i > 1 and A[Parent(i)] < A[i]
+		exchange A[i] with A[Parent(i)]
+		i = Parent(i)
+
+
+Parent(i)
+	return floor((i-1)/d)
+
+Child(i,j)
+	// j = the number of child that you want
+	return d(i) + j

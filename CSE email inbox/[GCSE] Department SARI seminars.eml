@@ -1,0 +1,564 @@
+Return-path: <gcse-bounces@cse.psu.edu>
+Envelope-to: qxn5005@cse.psu.edu
+Delivery-date: Thu, 22 Oct 2015 13:15:21 -0400
+Received: from [127.0.0.1] (helo=arlo.cse.psu.edu)
+	by arlo.cse.psu.edu with esmtp (Exim 4.84)
+	(envelope-from <gcse-bounces@cse.psu.edu>)
+	id 1ZpJSR-0005Nm-FB; Thu, 22 Oct 2015 13:15:19 -0400
+Received: from [127.0.0.1] (helo=localhost)
+ by arlo.cse.psu.edu with esmtp (Exim 4.84)
+ (envelope-from <Cindy@engr.psu.edu>) id 1ZpJS5-0005N3-U6
+ for gcse@cse.psu.edu; Thu, 22 Oct 2015 13:14:57 -0400
+X-Virus-Scanned: amavisd-new at cse.psu.edu
+Received: from arlo.cse.psu.edu ([127.0.0.1])
+ by localhost (arlo.cse.psu.edu [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id wTix4F1N0yOf for <gcse@cse.psu.edu>;
+ Thu, 22 Oct 2015 13:14:37 -0400 (EDT)
+Received: from tr22g10.aset.psu.edu ([146.186.149.133])
+ by arlo.cse.psu.edu with esmtp (Exim 4.84)
+ (envelope-from <Cindy@engr.psu.edu>) id 1ZpJRk-0005Mw-25
+ for gcse@cse.psu.edu; Thu, 22 Oct 2015 13:14:37 -0400
+Received: from ENGRCH1.engr.psu.edu (engrch1.ecs.psu.edu [130.203.201.48])
+ by tr22g10.aset.psu.edu (8.14.3/8.14.3) with ESMTP id t9MHEZDc4288626;
+ Thu, 22 Oct 2015 13:14:35 -0400
+Received: from ENGR2K10NODE1.engr.psu.edu ([fe80::d43f:abe7:5814:3a9e]) by
+ ENGRCH1.engr.psu.edu ([fe80::df7:c55c:c784:ec7e%11]) with mapi id
+ 14.02.0387.000; Thu, 22 Oct 2015 13:14:36 -0400
+From: Cindy Milliron <Cindy@engr.psu.edu>
+To: "gcse@cse.psu.edu" <gcse@cse.psu.edu>
+Thread-Topic: Department SARI seminars
+Thread-Index: AdEM7LXwbapiz3R8SZ2Kip/UzN8FSg==
+Date: Thu, 22 Oct 2015 17:14:35 +0000
+Message-ID: <266B01568208B140AE6E4C8CC64D0465DA05D795@ENGR2K10NODE1.engr.psu.edu>
+Accept-Language: en-US
+Content-Language: en-US
+X-MS-Has-Attach: yes
+X-MS-TNEF-Correlator: 
+x-originating-ip: [130.203.20.25]
+x-coe-internal: True
+Content-Type: multipart/mixed;
+ boundary="_004_266B01568208B140AE6E4C8CC64D0465DA05D795ENGR2K10NODE1en_"
+MIME-Version: 1.0
+X-Virus-Scanned: by amavisd-new
+X-PSUCSE-Spam-Score: 0.0
+X-PSUCSE-Spam-Level: /
+Cc: MAHAMED ALMEKKAWY <mka9@psu.edu>
+Subject: [GCSE] Department SARI seminars
+X-BeenThere: gcse@cse.psu.edu
+X-Mailman-Version: 2.1.15
+Precedence: list
+List-Id: CSE Graduate Student Mailing List <gcse.cse.psu.edu>
+List-Unsubscribe: <https://mail.cse.psu.edu/mailman/options/gcse>,
+ <mailto:gcse-request@cse.psu.edu?subject=unsubscribe>
+List-Post: <mailto:gcse@cse.psu.edu>
+List-Help: <mailto:gcse-request@cse.psu.edu?subject=help>
+List-Subscribe: <https://mail.cse.psu.edu/mailman/listinfo/gcse>,
+ <mailto:gcse-request@cse.psu.edu?subject=subscribe>
+Errors-To: gcse-bounces@cse.psu.edu
+Sender: "GCSE" <gcse-bounces@cse.psu.edu>
+
+--_004_266B01568208B140AE6E4C8CC64D0465DA05D795ENGR2K10NODE1en_
+Content-Type: multipart/alternative;
+	boundary="_000_266B01568208B140AE6E4C8CC64D0465DA05D795ENGR2K10NODE1en_"
+
+--_000_266B01568208B140AE6E4C8CC64D0465DA05D795ENGR2K10NODE1en_
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+
+Good afternoon,
+
+Attached is the schedule for the SARI seminars being offered this semester =
+by the department. I have also included the requirements below.
+
+Cindy
+
+As a reminder, SARI training must be completed during your first year of en=
+rollment.  The SARI program has two parts:
+
+
+  1.  During the first year of enrollment, graduate students will be requir=
+ed to complete an online Responsible Conduct of (RCR) training program prov=
+ided by the Collaborative Institutional Training Initiative (CITI).  The Of=
+fice  for Research Protections (ORP) will provide the conduit to this train=
+ing via the SARI Resource Portal on the ORP website (www.research.psu.edu/o=
+rp/sari<http://www.research.psu.edu/orp/sari>).  Students are required to c=
+omplete the "Responsible Conduct of Research (RCR) Course for Engineers."  =
+After completing the exam, print and submit the results to either Jennifer =
+Houser (342F IST) or Cindy Milliron (342G IST) or Katelen Bair (342H IST) f=
+or the 1-yr MEng students.
+
+
+  1.  Graduate students will also be required to engage in an additional 5 =
+hours of discussion-based RCR education prior to degree completion.  These =
+discussions will encompass both universal and discipline-specific material.=
+  The Office of Research Protections (OPR), the College of Engineering (COE=
+) and the Department of Computer Science and Engineering all hold discussio=
+n-based education events.  You may complete your 5 hours with any combinati=
+on of events from OPR, COE and/or CSE.  The Engineering Graduate Student Co=
+uncil (EGSC) puts out a newsletter/e-mails which will announce OPR and COE =
+SARI discussions.  NOTE:  Students who are eligible to receive SARI partici=
+pation credit for attending ORP workshops can sign in at the event.  Afterw=
+ard, ORP will email the student a participation confirmation with the date,=
+ title, and speaker.  Attached to the email will be an electronic certifica=
+te authenticating the email as coming from ORP.  Students should forward th=
+e email, with the attachment, to either Jennifer Houser (jjh2@psu.edu<mailt=
+o:jjh2@psu.edu>) or Cindy Milliron (clm39@psu.edu<mailto:clm39@psu.edu>).  =
+The email should be forwarded electronically (not printed).   Attendance wi=
+ll be taken at CSE events.  The details for the CSE SARI events for this se=
+mester will be sent as soon as they are finalized.
+
+This information is detailed in the Graduate Handbook and on our website.
+
+
+********************************
+Cindy Milliron
+Department of Computer Science & Engineering
+The Pennsylvania State University
+342G Information Sciences and Technology Building
+University Park PA 16802
+814-865-1582
+
+
+--_000_266B01568208B140AE6E4C8CC64D0465DA05D795ENGR2K10NODE1en_
+Content-Type: text/html; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+
+<html xmlns:v=3D"urn:schemas-microsoft-com:vml" xmlns:o=3D"urn:schemas-micr=
+osoft-com:office:office" xmlns:w=3D"urn:schemas-microsoft-com:office:word" =
+xmlns:m=3D"http://schemas.microsoft.com/office/2004/12/omml" xmlns=3D"http:=
+//www.w3.org/TR/REC-html40">
+<head>
+<meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Dus-ascii"=
+>
+<meta name=3D"Generator" content=3D"Microsoft Word 14 (filtered medium)">
+<style><!--
+/* Font Definitions */
+@font-face
+	{font-family:"Cambria Math";
+	panose-1:2 4 5 3 5 4 6 3 2 4;}
+@font-face
+	{font-family:Calibri;
+	panose-1:2 15 5 2 2 2 4 3 2 4;}
+/* Style Definitions */
+p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{margin:0in;
+	margin-bottom:.0001pt;
+	font-size:11.0pt;
+	font-family:"Calibri","sans-serif";}
+a:link, span.MsoHyperlink
+	{mso-style-priority:99;
+	color:blue;
+	text-decoration:underline;}
+a:visited, span.MsoHyperlinkFollowed
+	{mso-style-priority:99;
+	color:purple;
+	text-decoration:underline;}
+span.EmailStyle17
+	{mso-style-type:personal-compose;
+	font-family:"Calibri","sans-serif";
+	color:windowtext;}
+.MsoChpDefault
+	{mso-style-type:export-only;
+	font-family:"Calibri","sans-serif";}
+@page WordSection1
+	{size:8.5in 11.0in;
+	margin:1.0in 1.0in 1.0in 1.0in;}
+div.WordSection1
+	{page:WordSection1;}
+/* List Definitions */
+@list l0
+	{mso-list-id:1271275815;
+	mso-list-type:hybrid;
+	mso-list-template-ids:1399249226 67698703 67698713 67698715 67698703 67698=
+713 67698715 67698703 67698713 67698715;}
+@list l0:level1
+	{mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l0:level2
+	{mso-level-tab-stop:1.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l0:level3
+	{mso-level-tab-stop:1.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l0:level4
+	{mso-level-tab-stop:2.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l0:level5
+	{mso-level-tab-stop:2.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l0:level6
+	{mso-level-tab-stop:3.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l0:level7
+	{mso-level-tab-stop:3.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l0:level8
+	{mso-level-tab-stop:4.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l0:level9
+	{mso-level-tab-stop:4.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+ol
+	{margin-bottom:0in;}
+ul
+	{margin-bottom:0in;}
+--></style><!--[if gte mso 9]><xml>
+<o:shapedefaults v:ext=3D"edit" spidmax=3D"1026" />
+</xml><![endif]--><!--[if gte mso 9]><xml>
+<o:shapelayout v:ext=3D"edit">
+<o:idmap v:ext=3D"edit" data=3D"1" />
+</o:shapelayout></xml><![endif]-->
+</head>
+<body lang=3D"EN-US" link=3D"blue" vlink=3D"purple">
+<div class=3D"WordSection1">
+<p class=3D"MsoNormal">Good afternoon,<o:p></o:p></p>
+<p class=3D"MsoNormal"><o:p>&nbsp;</o:p></p>
+<p class=3D"MsoNormal">Attached is the schedule for the SARI seminars being=
+ offered this semester by the department. I have also included the requirem=
+ents below.<o:p></o:p></p>
+<p class=3D"MsoNormal"><o:p>&nbsp;</o:p></p>
+<p class=3D"MsoNormal">Cindy&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp=
+; <o:p></o:p></p>
+<p class=3D"MsoNormal"><o:p>&nbsp;</o:p></p>
+<p class=3D"MsoNormal">As a reminder, SARI training must be completed durin=
+g your first year of enrollment.&nbsp; The SARI program has two parts:<o:p>=
+</o:p></p>
+<p class=3D"MsoNormal">&nbsp;<o:p></o:p></p>
+<ol style=3D"margin-top:0in" start=3D"1" type=3D"1">
+<li class=3D"MsoNormal" style=3D"color:black;mso-list:l0 level1 lfo1">Durin=
+g the <b><i><u>first year of enrollment</u></i></b>, graduate students will=
+ be required to complete an online Responsible Conduct of (RCR) training pr=
+ogram provided by the Collaborative
+ Institutional Training Initiative (CITI). &nbsp;The Office &nbsp;for Resea=
+rch Protections (ORP) will provide the conduit to this training via the SAR=
+I Resource Portal on the ORP website (<a href=3D"http://www.research.psu.ed=
+u/orp/sari"><span style=3D"color:blue">www.research.psu.edu/orp/sari</span>=
+</a>).&nbsp;
+ Students are required to complete the &#8220;Responsible Conduct of Resear=
+ch (RCR) Course for Engineers.&#8221;&nbsp; After completing the exam, prin=
+t and submit the results to either
+<span style=3D"color:windowtext">Jennifer Houser </span>(342F IST) or Cindy=
+ Milliron (342<span style=3D"color:windowtext">G</span> IST) or Katelen Bai=
+r (342H IST) for the 1-yr MEng students.<o:p></o:p></li></ol>
+<p class=3D"MsoNormal"><span style=3D"color:#1F497D"><o:p>&nbsp;</o:p></spa=
+n></p>
+<ol style=3D"margin-top:0in" start=3D"2" type=3D"1">
+<li class=3D"MsoNormal" style=3D"mso-list:l0 level1 lfo1"><span style=3D"co=
+lor:black">Graduate students will also be required to engage in an addition=
+al 5 hours of discussion-based RCR education prior to degree completion.&nb=
+sp; These discussions will encompass both universal
+ and discipline-specific material.&nbsp; The Office of Research Protections=
+ (OPR), the College of Engineering (COE) and the Department of Computer Sci=
+ence and Engineering all hold discussion-based education events.&nbsp; You =
+may complete your 5 hours with any combination
+ of events from OPR, COE and/or CSE.&nbsp; The Engineering Graduate Student=
+ Council (EGSC) puts out a newsletter/e-mails which will announce OPR and C=
+OE SARI discussions.&nbsp; NOTE:&nbsp; Students who are eligible to receive=
+ SARI participation credit for attending ORP workshops
+ can sign in at the event.&nbsp; Afterward, ORP will email the student a pa=
+rticipation confirmation with the date, title, and speaker.&nbsp; Attached =
+to the email will be an electronic certificate authenticating the email as =
+coming from ORP.&nbsp; Students should forward
+ the email, with the attachment, to either </span>Jennifer Houser <span sty=
+le=3D"color:black">
+(<a href=3D"mailto:jjh2@psu.edu"><span style=3D"color:blue">jjh2@psu.edu</s=
+pan></a>) or Cindy Milliron (<a href=3D"mailto:clm39@psu.edu"><span style=
+=3D"color:blue">clm39@psu.edu</span></a>).&nbsp; The email should be forwar=
+ded electronically (not printed).&nbsp;&nbsp; Attendance
+ will be taken at CSE events.&nbsp; </span>The details for the CSE SARI eve=
+nts for this semester will be sent as soon as they are finalized.<o:p></o:p=
+></li></ol>
+<p class=3D"MsoNormal"><span style=3D"color:#1F497D"><o:p>&nbsp;</o:p></spa=
+n></p>
+<p class=3D"MsoNormal">This information is detailed in the Graduate Handboo=
+k and on our website.<o:p></o:p></p>
+<p class=3D"MsoNormal"><o:p>&nbsp;</o:p></p>
+<p class=3D"MsoNormal"><o:p>&nbsp;</o:p></p>
+<p class=3D"MsoNormal"><span style=3D"color:#002060">**********************=
+**********<o:p></o:p></span></p>
+<p class=3D"MsoNormal"><span style=3D"color:#002060">Cindy Milliron<o:p></o=
+:p></span></p>
+<p class=3D"MsoNormal"><span style=3D"color:#002060">Department of Computer=
+ Science &amp; Engineering<o:p></o:p></span></p>
+<p class=3D"MsoNormal"><span style=3D"color:#002060">The Pennsylvania State=
+ University<o:p></o:p></span></p>
+<p class=3D"MsoNormal"><span style=3D"color:#002060">342G Information Scien=
+ces and Technology Building<o:p></o:p></span></p>
+<p class=3D"MsoNormal"><span style=3D"color:#002060">University Park PA 168=
+02<o:p></o:p></span></p>
+<p class=3D"MsoNormal"><span style=3D"color:#002060">814-865-1582<o:p></o:p=
+></span></p>
+<p class=3D"MsoNormal"><o:p>&nbsp;</o:p></p>
+</div>
+</body>
+</html>
+
+--_000_266B01568208B140AE6E4C8CC64D0465DA05D795ENGR2K10NODE1en_--
+
+--_004_266B01568208B140AE6E4C8CC64D0465DA05D795ENGR2K10NODE1en_
+Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document;
+	name="SARI Seminars Fall 2015.docx"
+Content-Description: SARI Seminars Fall 2015.docx
+Content-Disposition: attachment; filename="SARI Seminars Fall 2015.docx";
+	size=14012; creation-date="Mon, 14 Sep 2015 19:40:33 GMT";
+	modification-date="Thu, 22 Oct 2015 15:24:52 GMT"
+Content-Transfer-Encoding: base64
+
+UEsDBBQABgAIAAAAIQAJJIeCgQEAAI4FAAATAAgCW0NvbnRlbnRfVHlwZXNdLnhtbCCiBAIooAAC
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC0
+lE1Pg0AQhu8m/geyVwPbejDGlPag9ahNrPG8LkPZyH5kZ/v17x1KS6qhpVq9kMAy7/vMCzOD0UqX
+0QI8KmtS1k96LAIjbabMLGWv08f4lkUYhMlEaQ2kbA3IRsPLi8F07QAjqjaYsiIEd8c5ygK0wMQ6
+MHSSW69FoFs/407IDzEDft3r3XBpTQAT4lBpsOHgAXIxL0M0XtHjmsRDiSy6r1+svFImnCuVFIFI
++cJk31zirUNClZt3sFAOrwiD8VaH6uSwwbbumaLxKoNoInx4Epow+NL6jGdWzjX1kByXaeG0ea4k
+NPWVmvNWAiJlrsukOdFCmR3/QQ4M6xLw7ylq3RPt31QoxnkOkj52dx4a46rppLbYq+12gxAopFNM
+vv6CcVfouFXuRFjC+8u/UeyJd4LkNBpT8V7CCYn/MIxGuhMi0LwD31z7Z3NsZI5Z0mRMvHVI+8P/
+ou3dgqiqYxo5Bz4oaFZE24g1jrR7zu4Pqu2WQdbizTfbdPgJAAD//wMAUEsDBBQABgAIAAAAIQAe
+kRq38wAAAE4CAAALAAgCX3JlbHMvLnJlbHMgogQCKKAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAjJLbSgNBDIbvBd9hyH032woi0tneSKF3
+IusDhJnsAXcOzKTavr2jILpQ217m9OfLT9abg5vUO6c8Bq9hWdWg2JtgR99reG23iwdQWchbmoJn
+DUfOsGlub9YvPJGUoTyMMaui4rOGQSQ+ImYzsKNchci+VLqQHEkJU4+RzBv1jKu6vsf0VwOamaba
+WQ1pZ+9AtcdYNl/WDl03Gn4KZu/Yy4kVyAdhb9kuYipsScZyjWop9SwabDDPJZ2RYqwKNuBpotX1
+RP9fi46FLAmhCYnP83x1nANaXg902aJ5x687HyFZLBZ9e/tDg7MvaD4BAAD//wMAUEsDBBQABgAI
+AAAAIQB8O5c5IgEAALkDAAAcAAgBd29yZC9fcmVscy9kb2N1bWVudC54bWwucmVscyCiBAEooAAB
+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
+
+--_004_266B01568208B140AE6E4C8CC64D0465DA05D795ENGR2K10NODE1en_--
+

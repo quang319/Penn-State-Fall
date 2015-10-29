@@ -1,0 +1,17 @@
+﻿Hello! Welcome to TCP P2P file sharing program!
+Below are the commands that you may use to operate the program:
+
+	- ListUploadables		--> Will provide you with a list of all the files from your desktop that you can share to your peers
+									(Note: You may only upload files from your desktop)
+
+	- Upload-#				--> Will upload the index of the file that was shown with the "ListUploads" command
+
+	- ListDownloadabless	--> will provide you with a list of all the files that are available for you to download from your peers
+
+	- Download-#			--> Will download the index of the file that was shown with the "ListDownloads"
+
+	- Leave					--> Will remove all your files from the server and close the program
+
+	- Help					--> Will present you with this prompt again
+
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~``
