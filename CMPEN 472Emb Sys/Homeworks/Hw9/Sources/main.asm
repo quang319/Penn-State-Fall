@@ -62,12 +62,12 @@ NULL              EQU         $00
 CR                EQU         $0D 
 LF                EQU         $0A
 *********** Registers for SCI Configuration *****
-;SCIDRL            EQU         $00cf             
-;SCISR1            EQU         $00cc             ; SCI Status Reg 1
+SCIDRL            EQU         $00cf             
+SCISR1            EQU         $00cc             ; SCI Status Reg 1
 
 *********** For debugger **************
-SCISR1            EQU         $0203            
-SCIDRL            EQU         $0204 
+;SCISR1            EQU         $0203            
+;SCIDRL            EQU         $0204 
 
             **** bits of SCISR1 *****
 TDRE              EQU         $80
@@ -156,7 +156,6 @@ pgstart           lds         #pgstart          ; initialize the stack pointer
                   bset        CRGINT,%10000000   ; enable RTI interrupt
                   bset        CRGFLG,%10000000   ; clear RTI IF (Interrupt Flag)
 
-
                   ldx         #Ecalc        
                   jsr         printmsg
 
@@ -164,6 +163,7 @@ pgstart           lds         #pgstart          ; initialize the stack pointer
                   std         MsgQueuePointer
 
 loop 
+                  jsr         UpdateDisplay          ; update display, each 1 second 
                   jsr         getchar           ; type writer - check the key board
                   cmpa        #$00              ;  if nothing typed, keep checking
                   beq         loop
@@ -210,17 +210,8 @@ OperateOnInput
                   cmpa        #13
                   lbne         OperateOnInput_NotEqualCR
 
-                  ; Moving the cursor to the next line
-                  ldaa        #LF               ; cursor to next line
-            
-                  jsr         putchar
-
-                  inc         lineCntr
-                  ldaa        lineCntr
-                  cmpa        #10
-                  ble         OperateOnInput_NoOverflow
-                  jsr         goBackHome
-OperateOnInput_NoOverflow
+           
+                  
 
                   ; Get Operand1 
                   ldx         #MsgQueue 
@@ -315,7 +306,7 @@ loadmin           ldaa        1,x+
                   ldy         #0
                   sty         ctr2p5m
                   jsr         display1stClk
-            
+                  cli                     ; Turn on intercept
                   lbra        CNexit
 
 clkquit           ldaa        1,x+             ; check if 'run' command
@@ -331,6 +322,14 @@ clkquit           ldaa        1,x+             ; check if 'run' command
                   bra         CNexit
           
 CNerror          
+                  jsr         nextLine
+
+                  inc         lineCntr
+                  ldaa        lineCntr
+                  cmpa        #4                ; compare lineCntr
+                  ble         CNerror_NoOverflow
+                  jsr         goBackHome
+CNerror_NoOverflow
                   ldx         #errmsg         ; print the 'Command Error' message
                   jsr         printmsg
 
@@ -346,6 +345,15 @@ CNexit
 
 
 OperateOnInput_Calculator
+                  jsr         nextLine
+
+                  inc         lineCntr
+                  ldaa        lineCntr
+                  cmpa        #4          ; compare lineCntr
+                  ble         OperateOnInput_NoOverflow
+                  jsr         goBackHome
+OperateOnInput_NoOverflow
+
                   ldaa        #1
                   jsr         CalculatorConverter
                   ; If invalid print until invalid character 
@@ -590,7 +598,7 @@ OperateOnInput_ResetAfterCR_Ecalc
                   jsr         nextLine
                   inc         lineCntr
                   ldaa        lineCntr
-                  cmpa        #10
+                  cmpa        #4                ; compare lineCntr
                   lble        OperateOnInput_ResetAfterCR_Ecalc_NoOverflow
                   jsr         goBackHome
 
@@ -957,7 +965,7 @@ goBackHome
 
                   dec   lineCntr
                   ldaa  lineCntr
-                  cmpa  #1
+                  cmpa  #0
                   bne   goBackHome
                   rts 
 ;***************Ending goBackHome**********************
@@ -1032,7 +1040,9 @@ OnStartup
                   jsr     putchar
                   ldaa    #'['
                   jsr     putchar
-                  ldaa    #'9'
+                  ldaa    #'1'
+                  jsr     putchar
+                  ldaa    #'2'
                   jsr     putchar
                   ldaa    #';'
                   jsr     putchar
@@ -1515,9 +1525,9 @@ getchar_NoInput   ldaa        #0
 MsgIntro1         dc.b        'Welcome! You are entering a program that will use the HC12 as a calculator.',CR,LF,'Operand inputs must be positive decimal numbers and have maximum of 3 digits limit.',CR,LF,NULL
 MsgIntro2         dc.b        'Leading zeros are valid inputs, but spaces are not allowable.',CR,LF,'The four valid operators are: +,-,*, and /',CR,LF,NULL
 MsgIntro3         dc.b        'Enjoy!.',CR,LF,NULL
-InvalidFormat     dc.b        '       Invalid input format',CR,LF,NULL
+InvalidFormat     dc.b        '       Invalid input format',NULL
 Ecalc             dc.b        'Ecalc> ',NULL
-OverflowError     dc.b        '       Overflow error',CR,LF,NULL 
+OverflowError     dc.b        '       Overflow error',NULL 
 
 msg1              DC.B        'enter the s command in the following format "s hh:mm:ss to start the clock"', NULL
 msg2              DC.B        'enter the q command to enter typewriter mode', NULL

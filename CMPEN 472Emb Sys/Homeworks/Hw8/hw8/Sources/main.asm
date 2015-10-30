@@ -498,8 +498,8 @@ UpdateDisplay
                   blo   UpDone           ; if interrupt count less than 400, then not 1 sec yet.
                                    ;    no need to update display.
 
-                  ldx   #0               ; interrupt counter reached 400 count, 1 sec up now
-                  stx   ctr2p5m          ; clear the interrupt count to 0, for the next 1 sec.
+                  ldx         #0               ; interrupt counter reached 400 count, 1 sec up now
+                  stx         ctr2p5m          ; clear the interrupt count to 0, for the next 1 sec.
 
                   ldx     time
                   inx
@@ -634,6 +634,7 @@ loadmin           ldaa    1,x+
                   cli                     ; Turn on intercept
             
                   bra   CNexit
+
 
 clkquit           ldaa  1,x+             ; check if 'run' command
                   cmpa  #CR              ;    'r' and 'un' with enter key CR.

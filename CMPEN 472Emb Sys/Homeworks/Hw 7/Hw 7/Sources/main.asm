@@ -132,6 +132,7 @@ pgstart           lds         #pgstart          ; initialize the stack pointer
                   std         MsgQueuePointer
 
 loop 
+                  jsr         UpdateDisplay          ; update display, each 1 second 
                   jsr         getchar           ; type writer - check the key board
                   cmpa        #$00              ;  if nothing typed, keep checking
                   beq         loop
