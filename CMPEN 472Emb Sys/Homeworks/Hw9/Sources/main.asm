@@ -75,6 +75,10 @@ TC                EQU         $40
 RDRF              EQU         $20
 
 
+CRGFLG            EQU         $0037        ; Clock and Reset Generator Flags
+CRGINT            EQU         $0038        ; Clock and Reset Generator Interrupts
+RTICTL            EQU         $003B        ; Real Time Interrupt Control
+
 
 
 
@@ -89,6 +93,7 @@ testing           dc.b        14
 
 MsgQueue          DC.B        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0   ; Queue to store the user inputs
 MsgQueuePointer   Dc.w        $0000             ; Pointer to keep track of where we are in the queue
+MsgQueueCounter   dc.b        0
 OutputQueue       Dc.b        32,32,32,32,32,32,32,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0   ; queue to store the output message 
 OutputQueuePointer Dc.b       $00
 FlgTypeWrite      dc.b        $00               ; Flag for the typewriter program 
@@ -100,6 +105,15 @@ Operator          dc.b        $00               ; variable use to store the valu
 TypeOfErrorFlag   dc.b        $00               ; 0 = InvalidFormat , 1 = Overflow
 NegativeFlag      dc.b        $00               ; If one then should put a negative sign onto the screen
 
+ctr2p5m           Dc.W        0                  ; 16bit interrupt counter for 2.5 mSec. of time
+
+time              DS.W        1
+
+lineCntr          dc.b        $0          
+
+
+                  ORG  $3FF0               ; Real Time Interrupt (RTI) interrupt vector setup
+                  DC.W RTIISR
 
 StackSP                                         ; remaining memory space for stack data
                                                 ; initial stack pointer position set
@@ -126,14 +140,22 @@ pgstart           lds         #pgstart          ; initialize the stack pointer
                   ***********************************
 
 
-                  ldx         #MsgIntro1        ; Print the introduction messages
-                  jsr         printmsg
+                  ;ldx         #MsgIntro1        ; Print the introduction messages
+                  ;jsr         printmsg
                   
-                  ldx         #MsgIntro2        
-                  jsr         printmsg
+                  ;ldx         #MsgIntro2        
+                  ;jsr         printmsg
 
-                  ldx         #MsgIntro3        
-                  jsr         printmsg
+                  ;ldx         #MsgIntro3        
+                  ;jsr         printmsg
+
+                  
+                  jsr         OnStartup
+                  bset        RTICTL,%00011001   ; set RTI: dev=10*(2**10)=2.555msec for C128 board
+                                          ;      4MHz quartz oscillator clock
+                  bset        CRGINT,%10000000   ; enable RTI interrupt
+                  bset        CRGFLG,%10000000   ; clear RTI IF (Interrupt Flag)
+
 
                   ldx         #Ecalc        
                   jsr         printmsg
@@ -184,6 +206,7 @@ OperateOnInput
                   pshd
                   ; At this point, RegA contains the newest character
                   ; If (RegA == CR)
+                  inc         MsgQueueCounter
                   cmpa        #13
                   lbne         OperateOnInput_NotEqualCR
 
@@ -192,18 +215,137 @@ OperateOnInput
             
                   jsr         putchar
 
+                  inc         lineCntr
+                  ldaa        lineCntr
+                  cmpa        #10
+                  ble         OperateOnInput_NoOverflow
+                  jsr         goBackHome
+OperateOnInput_NoOverflow
+
                   ; Get Operand1 
                   ldx         #MsgQueue 
 
                   **************************************
                   * Test whether or not the command is for the calculator or the clock
-                  
+
+                  ldaa        x 
+                  cmpa        #'s'
+                  lbne        OperateOnInput_Calculator
+
+                  ******* The clock program starts here *******
+                  ldaa        1,x+              ; We just need to increment x
+
+                  ldaa        MsgQueueCounter
+                  cmpa        #10
+                  lble        CNerror
+
+                  ldy         #0
+                  ldaa        1,x+
+                  cmpa        #' '
+                  lbne        CNerror
+            
+                  ldab        #1
+                  ldaa        1,x+
+                  jsr         asciiDec2Dec
+                  cmpa        #-1
+                  lbeq        CNerror
+            
+                  ldab        #9
+                  ldaa        1,x+
+                  jsr         asciiDec2Dec
+                  cmpa        #-1
+                  lbeq        CNerror
+            
+                  cpy         #24 
+                  lbhi        CNerror
+            
+                  cpy         #13
+                  blo         checkzero
+                  tfr         y,d
+                  tba
+                  ldab        #13
+                  sba
+                  tab
+                  ldaa        #0
+                  tfr         d,y
+                  aby
+            
+checkzero         cpy         #0
+                  bne         loadmin
+                  ldy         #12
+
+
+loadmin           ldaa        1,x+
+                  cmpa        #':'
+                  bne         CNerror
+            
+                  ldab        #5
+                  ldaa        1,x+
+                  jsr         asciiDec2Dec
+                  cmpa        #-1
+                  beq         CNerror
+            
+                  ldab        #9
+                  ldaa        1,x+
+                  jsr         asciiDec2Dec
+                  cmpa        #-1
+                  beq         CNerror
+            
+                  ldaa        1,x+
+                  cmpa        #':'
+                  bne         CNerror
+            
+                  ldab        #5
+                  ldaa        1,x+
+                  jsr         asciiDec2Dec
+                  cmpa        #-1
+                  beq         CNerror
+            
+                  ldab        #9
+                  ldaa        1,x+
+                  jsr         asciiDec2Dec
+                  cmpa        #-1
+                  beq         CNerror
+            
+                  ldaa        1,x+
+                  cmpa        #0
+                  bne         CNerror
+            
+                  sty         time
+                  ldy         #0
+                  sty         ctr2p5m
+                  jsr         display1stClk
+            
+                  lbra        CNexit
+
+clkquit           ldaa        1,x+             ; check if 'run' command
+                  cmpa        #CR              ;    'r' and 'un' with enter key CR.
+                  bne         CNerror
+                  sei                    ; it is 'stop' command, turn off interrupt
+         
+                  jsr         nextLine
+                  ldx         #msgexit
+                  jsr         printmsg
+                  jsr         nextLine
+                  jmp         typeWriter
+                  bra         CNexit
+          
+CNerror          
+                  ldx         #errmsg         ; print the 'Command Error' message
+                  jsr         printmsg
+
+CNexit            
+                  lbra        OperateOnInput_ResetAfterCR_Ecalc
 
 
 
 
 
-                  
+
+
+
+
+OperateOnInput_Calculator
                   ldaa        #1
                   jsr         CalculatorConverter
                   ; If invalid print until invalid character 
@@ -419,6 +561,7 @@ OperateOnInput_InvalidInput_QueueLoop
                   jsr         putchar
                   ldaa        #LF 
                   jsr         putchar
+                  inc         lineCntr
 
                   ; Check the flag to see what kind of error we have
                   brset       TypeOfErrorFlag,1,OperateOnInput_InvalidInput_Overflow
@@ -441,16 +584,21 @@ OperateOnInput_ResetAfterCR                     ; clearing MsgQueue and MsgQueue
                   ; Printing the OutputQueue
                   ldx         #OutputQueue        
                   jsr         printmsg
-                  ldaa        #CR 
-                  jsr         putchar
-                  ldaa        #LF 
-                  jsr         putchar
 
 OperateOnInput_ResetAfterCR_Ecalc
+                  
+                  jsr         nextLine
+                  inc         lineCntr
+                  ldaa        lineCntr
+                  cmpa        #10
+                  lble        OperateOnInput_ResetAfterCR_Ecalc_NoOverflow
+                  jsr         goBackHome
 
+OperateOnInput_ResetAfterCR_Ecalc_NoOverflow
                   ; Print the Ecalc> on the screen 
                   ldx         #Ecalc 
                   jsr         printmsg
+
 
                   ; Clearing the MsgQueue
                   ldd         #MsgQueue
@@ -464,7 +612,7 @@ OperateOnInput_ResetAfterCR_MsgQueueLoop
                   stab        1,y+
                   tfr         y,d 
                   subd        sp 
-                  lbls         OperateOnInput_ResetAfterCR_MsgQueueLoop
+                  lbls        OperateOnInput_ResetAfterCR_MsgQueueLoop
                   puld
 
                   ; Clearing the OutputQueue
@@ -493,6 +641,7 @@ OperateOnInput_ResetAfterCR_OutputQueueLoop
                   staa        Operator 
                   staa        TypeOfErrorFlag
                   staa        NegativeFlag
+                  clr         MsgQueueCounter
                   bra         OperateOnInput_EndOfSR
 
 OperateOnInput_NotEqualCR
@@ -514,6 +663,477 @@ OperateOnInput_EndOfSR
 
 
 
+
+;****************displayClk***********************
+;* Program: Clears Terminal Screen
+;* Input:   None
+;* Output:  Clear Terminal  
+;**********************************************
+
+displayClk        psha
+                  pshb
+                  pshx
+            
+                  ; Save cursor position
+                  ldaa    #$1B         ; esc character
+                  jsr     putchar
+                  ldaa    #'['
+                  jsr     putchar
+                  ldaa    #'s'
+                  jsr     putchar
+            
+                  ; Move cursor to Spot
+                  ldaa    #$1B         ; esc character
+                  jsr     putchar
+                  ldaa    #'['
+                  jsr     putchar
+                  ldaa    #'5'
+                  jsr     putchar
+                  ldaa    #';'
+                  jsr     putchar
+                  ldaa    #'4'
+                  jsr     putchar
+                  ldaa    #'4'
+                  jsr     putchar
+                  ldaa    #'H'
+                  jsr     putchar
+            
+                  ldd     time
+                  ldx     #10
+                  idiv    
+                  ldaa    #$30
+                  aba
+                  jsr     putchar
+            
+                  cmpb    #0    
+                  lbne    clkQuit
+            
+                  ldaa    #$1B         ; esc character
+                  jsr     putchar
+                  ldaa    #'['
+                  jsr     putchar
+                  ldaa    #'2'         
+                  jsr     putchar
+                  ldaa    #'D'
+                  jsr     putchar
+            
+                  xgdx
+                  ldx     #6
+                  idiv
+                  ldaa    #$30
+                  aba
+                  jsr     putchar
+                  cmpb    #0    
+                  lbne    clkQuit
+            
+                  ; Move cursor back 3
+                  ldaa    #$1B         ; esc character
+                  jsr     putchar
+                  ldaa    #'['
+                  jsr     putchar
+                  ldaa    #'3'         
+                  jsr     putchar
+                  ldaa    #'D'
+                  jsr     putchar
+            
+                  xgdx
+                  ldx     #10
+                  idiv
+                  ldaa    #$30
+                  aba
+                  jsr     putchar
+                  ldaa    #':'
+                  jsr     putchar
+            
+                  cmpb    #0    
+                  lbne    clkQuit
+            
+                  ; Move cursor back 2
+                  ldaa    #$1B         ; esc character
+                  jsr     putchar
+                  ldaa    #'['
+                  jsr     putchar
+                  ldaa    #'3'         
+                  jsr     putchar
+                  ldaa    #'D'
+                  jsr     putchar
+            
+                  xgdx
+                  ldx     #6
+                  idiv
+                  ldaa    #$30
+                  aba
+                  jsr     putchar
+                  cmpb    #0    
+                  lbne    clkQuit
+            
+                  ; Move cursor back 3
+                  ldaa    #$1B         ; esc character
+                  jsr     putchar
+                  ldaa    #'['
+                  jsr     putchar
+                  ldaa    #'3'         
+                  jsr     putchar
+                  ldaa    #'D'
+                  jsr     putchar
+            
+                  xgdx
+                  ldx     #10
+                  idiv
+                  ldaa    #$30
+                  aba
+                  jsr     putchar
+                  ldaa    #':'
+                  jsr     putchar
+                  cmpb    #0    
+                  lbne    clkQuit
+            
+                  ; Move cursor back 2
+                  ldaa  #$1B         ; esc character
+                  jsr   putchar
+                  ldaa  #'['
+                  jsr   putchar
+                  ldaa  #'3'         
+                  jsr   putchar
+                  ldaa  #'D'
+                  jsr   putchar
+            
+                  xgdx
+                  ldx     #2
+                  idiv
+                  ldaa    #$30
+                  aba
+                  jsr     putchar
+            
+clkQuit           ; Restore cursor position
+                  ldaa  #$1B         ; esc character
+                  jsr   putchar
+                  ldaa  #'['
+                  jsr   putchar
+                  ldaa  #'u'
+                  jsr   putchar
+            
+                  ;jsr nextLine
+
+                  pulx
+                  pulb  
+                  pula
+            
+                  rts
+;****************end of displayClk****************
+
+;****************display1stClk***********************
+;* Program: Clears Terminal Screen
+;* Input:   None
+;* Output:  Clear Terminal      
+;**********************************************
+
+display1stClk 
+                  psha
+                  pshb
+                  pshx
+            
+                  ; Save cursor position
+                  ldaa    #$1B         ; esc character
+                  jsr     putchar
+                  ldaa    #'['
+                  jsr     putchar
+                  ldaa    #'s'
+                  jsr     putchar
+            
+                  ; Move cursor to Spot
+                  ldaa    #$1B         ; esc character
+                  jsr     putchar
+                  ldaa    #'['
+                  jsr     putchar
+                  ldaa    #'5'
+                  jsr     putchar
+                  ldaa    #';'
+                  jsr     putchar
+                  ldaa    #'3'
+                  jsr     putchar
+                  ldaa    #'7'
+                  jsr     putchar
+                  ldaa    #'H'
+                  jsr     putchar
+            
+                  ldd     time
+                  ldx     #10
+                  idiv    
+                  ldaa    #$30
+                  aba
+                  psha
+            
+                  xgdx
+                  ldx     #6
+                  idiv
+                  ldaa    #$30
+                  aba
+                  psha
+            
+                  xgdx
+                  ldx     #10
+                  idiv
+                  ldaa    #$30
+                  aba
+                  psha
+            
+                  xgdx
+                  ldx     #6
+                  idiv
+                  ldaa    #$30
+                  aba
+                  psha
+
+                  xgdx
+                  ldx     #10
+                  idiv
+                  ldaa    #$30
+                  aba
+                  psha
+
+                  xgdx
+                  ldx     #2
+                  idiv
+                  ldaa    #$30
+                  aba
+            
+                  jsr     putchar
+                  pula
+                  jsr     putchar
+                  ldaa    #':'
+                  jsr     putchar
+            
+                  pula
+                  jsr     putchar
+                  pula    
+                  jsr     putchar
+                  ldaa    #':'
+                  jsr     putchar
+            
+                  pula
+                  jsr     putchar
+                  pula    
+                  jsr     putchar
+            
+                  ; Restore cursor position
+                  ldaa  #$1B         ; esc character
+                  jsr   putchar
+                  ldaa  #'['
+                  jsr   putchar
+                  ldaa  #'u'
+                  jsr   putchar
+            
+                  pulx
+                  pulb  
+                  pula
+            
+                  rts
+;****************end of display1stClk****************
+
+;***************goBackHome**********************
+goBackHome
+
+                  ldaa  #$1B         ; esc character
+                  jsr   putchar
+                  ldaa  #'['
+                  jsr   putchar
+                  ldaa  #'1'         ; $38 in hex
+                  jsr   putchar
+                  ldaa  #'A'
+                  jsr   putchar
+
+
+                  ldaa  #$1B        ; Clear the line
+                  jsr   putchar
+                  ldaa  #'['
+                  jsr   putchar
+                  ldaa  #'2'
+                  jsr   putchar
+                  ldaa  #'K'
+                  jsr   putchar
+
+           
+
+                  dec   lineCntr
+                  ldaa  lineCntr
+                  cmpa  #1
+                  bne   goBackHome
+                  rts 
+;***************Ending goBackHome**********************
+
+;***************Update Display**********************
+;* Program: Update count down timer display if 1 second is up
+;* Input:   ctr2p5m variable
+;* Output:  timer display on the Hyper Terminal
+;* Registers modified: CCR
+;* Algorithm:
+;    Check for 1 second passed
+;      if not 1 second yet, just pass
+;      if 1 second has reached, then update display, toggle LED, and reset ctr2p5m
+;**********************************************
+UpdateDisplay
+                  psha
+                  pshx
+                  ldx         ctr2p5m          ; check for 1 sec
+                  cpx         #399             ; 2.5msec * 400 = 1 sec        0 to 399 count is 400
+                  blo         UpDone           ; if interrupt count less than 400, then not 1 sec yet.
+                                   ;    no need to update display.
+
+                  ldx         #0               ; interrupt counter reached 400 count, 1 sec up now
+                  stx         ctr2p5m          ; clear the interrupt count to 0, for the next 1 sec.
+
+                  ldx         time
+                  inx
+                  cpx         #46800
+                  bne         storeTime
+                  ldx         #3600
+                  stx         time
+                  jsr         display1stClk
+                  bra         UpDone
+            
+storeTime         stx         time
+
+                  jsr         displayClk
+            
+UpDone            pulx
+                  pula
+                  rts
+;***************end of Update Display***************
+
+;***********RTI interrupt service routine***************
+RTIISR            bset  CRGFLG,%10000000   ; clear RTI Interrupt Flag
+                  ldx   ctr2p5m
+                  inx
+                  stx   ctr2p5m            ; every time the RTI occur, increase interrupt count
+rtidone           RTI
+;***********end of RTI interrupt service routine********
+
+;****************OnStartup***********************
+;* Program: 
+;* Input:       
+;* Output:  
+;* Registers modified: 
+;*            
+;**********************************************
+
+OnStartup           
+                  jsr     clearTerminal
+
+                  ldx   #msg1            ; print the first message, 'Hello'
+                  jsr   printmsg               
+                  jsr   nextLine
+            
+                  ldx   #msg2            ; print the second message
+                  jsr   printmsg
+
+                        ; Move cursor to Spot
+                  ldaa    #$1B         ; esc character
+                  jsr     putchar
+                  ldaa    #'['
+                  jsr     putchar
+                  ldaa    #'9'
+                  jsr     putchar
+                  ldaa    #';'
+                  jsr     putchar
+                  ldaa    #'0'
+                  jsr     putchar
+                  ldaa    #'H'
+                  jsr     putchar
+            
+            
+                              
+                  rts
+;****************end of OnStartup****************
+
+;****************clearTerminal***********************
+;* Program: Clears Terminal Screen
+;* Input:   None
+;* Output:  Clear Terminal  
+;* Registers modified: 
+;*          A: Protected        
+;**********************************************
+
+clearTerminal         
+                  psha
+                  ldaa  #$1B
+                  jsr   putchar
+                  ldaa  #'['
+                  jsr   putchar
+                  ldaa  #'2'
+                  jsr   putchar
+                  ldaa  #'J'
+                  jsr   putchar
+                  ldaa  #CR
+                  jsr   putchar
+                  pula
+            
+                  rts
+;****************end of clearTerminal****************
+
+;****************asciiDec2Dec***********************
+;* Program: Convert valid ASCII Decimal into Decimal
+;* Input:   ASCII Decimal character in A  
+;* Output:  Binary representation of number in A
+;* Registers modified: 
+;*              A: Converted to Decimal 
+;*              B: Max value of A 
+;*              Y: Time being built        
+;* Algorithm: Test if char is within range '0-9'
+;*              If so, subtract '0'.
+;*            Else character is not a decimal in Hex
+;*              Set errFlag
+;**********************************************
+asciiDec2Dec
+                  suba        #'0'
+                  blo         dec2Fail
+                  psha
+                        
+                  sba
+                  bhi         dec2Fail
+            
+                  clra
+                  incb
+                  emul
+                  xgdy            
+            
+                  pula
+                  tab
+                  aby
+                  rts
+
+dec2Fail          pula
+                  ldaa        #-1
+
+                  rts         
+
+
+;****************typeWriter***********************
+;* Program: 
+;* Input:       
+;* Output:  
+;* Registers modified: 
+;*            
+;**********************************************
+
+typeWriter        jsr     getchar           ; type writer - check the key board
+                  cmpa    #$00              ;  if nothing typed, keep checking
+                  beq     typeWriter
+                                    ;  otherwise - what is typed on key board
+                  jsr     putchar           ; is displayed on the terminal window
+                  cmpa    #CR
+                  bne     typeWriter        ; if Enter/Return key is pressed, move the
+                  ldaa    #LF               ; cursor to next line
+                  jsr     putchar
+                  bra     typeWriter   
+
+;****************nextline**********************
+nextLine          ldaa  #CR              ; move the cursor to beginning of the line
+                  jsr   putchar          ;   Cariage Return/Enter key
+                  ldaa  #LF              ; move the cursor to next line, Line Feed
+                  jsr   putchar
+                  rts
+;****************end of nextline***************
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -898,6 +1518,11 @@ MsgIntro3         dc.b        'Enjoy!.',CR,LF,NULL
 InvalidFormat     dc.b        '       Invalid input format',CR,LF,NULL
 Ecalc             dc.b        'Ecalc> ',NULL
 OverflowError     dc.b        '       Overflow error',CR,LF,NULL 
+
+msg1              DC.B        'enter the s command in the following format "s hh:mm:ss to start the clock"', NULL
+msg2              DC.B        'enter the q command to enter typewriter mode', NULL
+errmsg            DC.B        'Invalid time format. Correct example => hh:mm:ss', NULL
+msgexit           DC.B        'You are now in typewriter mode.', NULL
                   END               ; this is end of assembly source file
                               ; lines below are ignored - not assembled/compiled
 
