@@ -64,6 +64,8 @@ LF                EQU         $0A
 *********** Registers for SCI Configuration *****
 SCIDRL            EQU         $00cf             
 SCISR1            EQU         $00cc             ; SCI Status Reg 1
+SCIBDL            EQU         $00c9
+SCIBDH            EQU         $00c8 
 
 *********** For debugger **************
 ;SCISR1            EQU         $0203            
@@ -126,6 +128,13 @@ StackSP                                         ; remaining memory space for sta
                   org         $3100             ; Program start address, in RAM
 pgstart           lds         #pgstart          ; initialize the stack pointer
                   
+                  clr         SCIBDH
+                  ldaa        #13
+                  staa        SCIBDL
+pgstart_changeBD
+                  jsr         getchar
+                  cmpa        #0
+                  beq         pgstart_changeBD
 
                   ldaa        #%11110000        ; set PORTB bit 7,6,5,4,as output. 3,2,1,0 as input
                   staa        DDRB              ; Led 1,2,3,4 on PORTB bit 0,1,2,3.
@@ -307,31 +316,28 @@ loadmin           ldaa        1,x+
                   sty         ctr2p5m
                   jsr         display1stClk
                   cli                     ; Turn on intercept
+                  jsr         nextLine
+                  jsr         goBack
                   lbra        CNexit
 
-clkquit           ldaa        1,x+             ; check if 'run' command
-                  cmpa        #CR              ;    'r' and 'un' with enter key CR.
-                  bne         CNerror
-                  sei                    ; it is 'stop' command, turn off interrupt
+;clkquit           ldaa        1,x+             ; check if 'run' command
+                  ;cmpa        #CR              ;    'r' and 'un' with enter key CR.
+                  ;bne         CNerror
+                  ;sei                    ; it is 'stop' command, turn off interrupt
          
-                  jsr         nextLine
-                  ldx         #msgexit
-                  jsr         printmsg
-                  jsr         nextLine
-                  jmp         typeWriter
-                  bra         CNexit
+                  ;jsr         nextLine
+                  ;ldx         #msgexit
+                  ;jsr         printmsg
+                  ;jsr         nextLine
+                  ;jmp         typeWriter
+                  ;bra         CNexit
           
 CNerror          
                   jsr         nextLine
 
-                  inc         lineCntr
-                  ldaa        lineCntr
-                  cmpa        #4                ; compare lineCntr
-                  ble         CNerror_NoOverflow
-                  jsr         goBackHome
-CNerror_NoOverflow
                   ldx         #errmsg         ; print the 'Command Error' message
                   jsr         printmsg
+                  jsr         goBack
 
 CNexit            
                   lbra        OperateOnInput_ResetAfterCR_Ecalc
@@ -346,14 +352,6 @@ CNexit
 
 OperateOnInput_Calculator
                   jsr         nextLine
-
-                  inc         lineCntr
-                  ldaa        lineCntr
-                  cmpa        #4          ; compare lineCntr
-                  ble         OperateOnInput_NoOverflow
-                  jsr         goBackHome
-OperateOnInput_NoOverflow
-
                   ldaa        #1
                   jsr         CalculatorConverter
                   ; If invalid print until invalid character 
@@ -563,19 +561,19 @@ OperateOnInput_InvalidInput_QueueLoop
                   pulx
 
                   ; Printing the OutputQueue
-                  ldx         #OutputQueue        
-                  jsr         printmsg
-                  ldaa        #CR 
-                  jsr         putchar
-                  ldaa        #LF 
-                  jsr         putchar
-                  inc         lineCntr
+                  ;ldx         #OutputQueue        
+                  ;jsr         printmsg
+                  ;ldaa        #CR 
+                  ;jsr         putchar
+                  ;ldaa        #LF 
+                  ;jsr         putchar
 
                   ; Check the flag to see what kind of error we have
                   brset       TypeOfErrorFlag,1,OperateOnInput_InvalidInput_Overflow
                   ; Print the InvalidFormat string
                   ldx         #InvalidFormat 
                   jsr         printmsg
+                  jsr         goBack
 
                   lbra        OperateOnInput_ResetAfterCR_Ecalc
                   ;
@@ -583,7 +581,7 @@ OperateOnInput_InvalidInput_Overflow
                   ;Print the overflow string 
                   ldx         #OverflowError 
                   jsr         printmsg
-
+                  jsr         goBack
                   lbra        OperateOnInput_ResetAfterCR_Ecalc
 
 
@@ -592,17 +590,10 @@ OperateOnInput_ResetAfterCR                     ; clearing MsgQueue and MsgQueue
                   ; Printing the OutputQueue
                   ldx         #OutputQueue        
                   jsr         printmsg
+                  jsr         goBack
 
 OperateOnInput_ResetAfterCR_Ecalc
                   
-                  jsr         nextLine
-                  inc         lineCntr
-                  ldaa        lineCntr
-                  cmpa        #4                ; compare lineCntr
-                  lble        OperateOnInput_ResetAfterCR_Ecalc_NoOverflow
-                  jsr         goBackHome
-
-OperateOnInput_ResetAfterCR_Ecalc_NoOverflow
                   ; Print the Ecalc> on the screen 
                   ldx         #Ecalc 
                   jsr         printmsg
@@ -695,7 +686,9 @@ displayClk        psha
                   jsr     putchar
                   ldaa    #'['
                   jsr     putchar
-                  ldaa    #'5'
+                  ldaa    #'1'
+                  jsr     putchar
+                  ldaa    #'2'
                   jsr     putchar
                   ldaa    #';'
                   jsr     putchar
@@ -854,7 +847,9 @@ display1stClk
                   jsr     putchar
                   ldaa    #'['
                   jsr     putchar
-                  ldaa    #'5'
+                  ldaa    #'1'
+                  jsr     putchar
+                  ldaa    #'2'
                   jsr     putchar
                   ldaa    #';'
                   jsr     putchar
@@ -938,6 +933,34 @@ display1stClk
             
                   rts
 ;****************end of display1stClk****************
+
+;***************goBackHome**********************
+goBack
+                  psha
+                  ldaa  #$0d
+                  jsr   putchar
+                  ldaa  #$1B         ; esc character
+                  jsr   putchar
+                  ldaa  #'['
+                  jsr   putchar
+                  ldaa  #'1'         ; $38 in hex
+                  jsr   putchar
+                  ldaa  #'A'
+                  jsr   putchar
+
+
+                  ldaa  #$1B        ; Clear the line
+                  jsr   putchar
+                  ldaa  #'['
+                  jsr   putchar
+                  ldaa  #'2'
+                  jsr   putchar
+                  ldaa  #'K'
+                  jsr   putchar
+
+                  pula
+                  rts 
+;***************Ending goBackHome**********************
 
 ;***************goBackHome**********************
 goBackHome
@@ -1040,7 +1063,7 @@ OnStartup
                   jsr     putchar
                   ldaa    #'['
                   jsr     putchar
-                  ldaa    #'1'
+                  ldaa    #'2'
                   jsr     putchar
                   ldaa    #'2'
                   jsr     putchar
@@ -1466,6 +1489,16 @@ printmsg
                   pshy
                   pshx                          ; save registers
 
+
+                  ldaa  #$1B        ; Clear the line
+                  jsr   putchar
+                  ldaa  #'['
+                  jsr   putchar
+                  ldaa  #'2'
+                  jsr   putchar
+                  ldaa  #'K'
+                  jsr   putchar
+
 printmsg_Loop     ldaa        1,x+
                   cmpa        #NULL
                   beq         printmsg_EndOfMsg
@@ -1526,11 +1559,11 @@ MsgIntro1         dc.b        'Welcome! You are entering a program that will use
 MsgIntro2         dc.b        'Leading zeros are valid inputs, but spaces are not allowable.',CR,LF,'The four valid operators are: +,-,*, and /',CR,LF,NULL
 MsgIntro3         dc.b        'Enjoy!.',CR,LF,NULL
 InvalidFormat     dc.b        '       Invalid input format',NULL
-Ecalc             dc.b        'Ecalc> ',NULL
+Ecalc             dc.b        'Tcalc> ',NULL
 OverflowError     dc.b        '       Overflow error',NULL 
 
 msg1              DC.B        'enter the s command in the following format "s hh:mm:ss to start the clock"', NULL
-msg2              DC.B        'enter the q command to enter typewriter mode', NULL
+msg2              DC.B        'calculator operators are +, -, *, and /', NULL
 errmsg            DC.B        'Invalid time format. Correct example => hh:mm:ss', NULL
 msgexit           DC.B        'You are now in typewriter mode.', NULL
                   END               ; this is end of assembly source file
