@@ -1,23 +1,19 @@
 **********************************************************************************
 *
-* Title:        SCI program
+* Title:        RTI clock and calcualtor program
 *
-* Objective:    CSE472 Homework 7
+* Objective:    CSE472 Homework 9
 *
 * Revision:     V1.0
 *
-* Date:         10/12/2015
+* Date:         11/2/2015
 *
 * Programmer:   Quang Nguyen
 *
 * Company:      PSU CMPEN472
 *
-* Purpose:      To use the SCI interface to use the microcontroller as a calculator. Below are restrictions regarding the inputs
-*                       - Inputs must be positive decimal number
-*                       - Input must have a maximum of 3 digits
-*                       - Valid operators are: +,-,*, and /
-*                       - Only 2 operands and one operator are allow. Spaces may not be used
-
+* Purpose:      To use the SCI interface to use the microcontroller as a calculator and a real time clock . 
+*
 *
 * Register use: 
 *               D,X,Y
@@ -142,21 +138,6 @@ pgstart_changeBD
                   ldaa        #$f0              ; keep all leds off to begin with
                   staa        PORTB    
 
-                  ***********************************
-                  *
-                  *           Need to change the baud rate
-                  **
-                  ***********************************
-
-
-                  ;ldx         #MsgIntro1        ; Print the introduction messages
-                  ;jsr         printmsg
-                  
-                  ;ldx         #MsgIntro2        
-                  ;jsr         printmsg
-
-                  ;ldx         #MsgIntro3        
-                  ;jsr         printmsg
 
                   
                   jsr         OnStartup
@@ -341,14 +322,6 @@ CNerror
 
 CNexit            
                   lbra        OperateOnInput_ResetAfterCR_Ecalc
-
-
-
-
-
-
-
-
 
 OperateOnInput_Calculator
                   jsr         nextLine
