@@ -5,6 +5,9 @@
                    displayName="Header Files"
                    projectFiles="true">
       <itemPath>node0.h</itemPath>
+      <itemPath>node1.h</itemPath>
+      <itemPath>node2.h</itemPath>
+      <itemPath>node3.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ResourceFiles"
                    displayName="Resource Files"
@@ -15,7 +18,10 @@
                    projectFiles="true">
       <itemPath>main.c</itemPath>
       <itemPath>node0.c</itemPath>
-      <itemPath>testmain.c</itemPath>
+      <itemPath>node1.c</itemPath>
+      <itemPath>node2.c</itemPath>
+      <itemPath>node3.c</itemPath>
+      <itemPath>prog3.c</itemPath>
     </logicalFolder>
     <logicalFolder name="TestFiles"
                    displayName="Test Files"
@@ -25,7 +31,7 @@
                      displayName="Test_Node0"
                      projectFiles="true"
                      kind="TEST">
-        <itemPath>tests/newcunittest.c</itemPath>
+        <itemPath>tests/Test_Node0.c</itemPath>
       </logicalFolder>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
@@ -59,9 +65,21 @@
       </item>
       <item path="node0.h" ex="false" tool="3" flavor2="0">
       </item>
-      <item path="testmain.c" ex="false" tool="0" flavor2="0">
+      <item path="node1.c" ex="false" tool="0" flavor2="0">
       </item>
-      <item path="tests/newcunittest.c" ex="false" tool="0" flavor2="0">
+      <item path="node1.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="node2.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="node2.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="node3.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="node3.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="prog3.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="tests/Test_Node0.c" ex="false" tool="0" flavor2="0">
       </item>
     </conf>
     <conf name="Release" type="1">
@@ -98,9 +116,21 @@
       </item>
       <item path="node0.h" ex="false" tool="3" flavor2="0">
       </item>
-      <item path="testmain.c" ex="false" tool="0" flavor2="0">
+      <item path="node1.c" ex="false" tool="0" flavor2="0">
       </item>
-      <item path="tests/newcunittest.c" ex="false" tool="0" flavor2="0">
+      <item path="node1.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="node2.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="node2.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="node3.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="node3.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="prog3.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="tests/Test_Node0.c" ex="false" tool="0" flavor2="0">
       </item>
     </conf>
   </confs>

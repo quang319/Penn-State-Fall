@@ -11,6 +11,8 @@ extern int TRACE;
 extern int YES;
 extern int NO;
 
+int connectcosts0[4] = { 0,  1,  3, 7 };
+
 struct distance_table
 {
   int costs[4][4];
@@ -22,7 +24,7 @@ int node = 0;
 
 void rtinit0() 
 {
-  int initCost [4] = {0,1,3,7};
+
   int i,j;
   for (i = 0; i < 4; ++i)
   {
@@ -30,7 +32,7 @@ void rtinit0()
     {
       if (i == 0)
       {
-        dt0.costs[i][j] = initCost[j];
+        dt0.costs[i][j] = connectcosts0[j];
       }
       else
       {

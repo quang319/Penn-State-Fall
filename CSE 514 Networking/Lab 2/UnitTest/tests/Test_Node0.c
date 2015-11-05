@@ -100,7 +100,7 @@ void testTwoPkg() {
     }
     rtupdate0(&pkg1);
 
-    // Passsing packaget from 1
+    // Passsing packaget from 2
     struct rtpkt pkg2;
     pkg2.sourceid = 2;
     pkg2.destid = 0;
@@ -125,6 +125,59 @@ void testTwoPkg() {
     }
 }
 
+void testAllInorderedPackages() {
+    int expectedResult[4][4] = { {0,1,2,4}, {1,0,1,999}, {3,1,0,2}, {7,999,2,0}};
+    int i, j;
+    rtinit0();
+
+    // Passsing packaget from 1
+    struct rtpkt pkg1;
+    pkg1.sourceid = 1;
+    pkg1.destid = 0;
+    int value1 [4] = {1,0,1,999};
+    for (i = 0; i < 4; i++)
+    {
+        pkg1.mincost[i] = value1[i];
+    }
+    rtupdate0(&pkg1);
+
+    // Passsing packaget from 2
+    struct rtpkt pkg2;
+    pkg2.sourceid = 2;
+    pkg2.destid = 0;
+    int value2 [4] = {3,1,0,2};
+    for (i = 0; i < 4; i++)
+    {
+        pkg2.mincost[i] = value2[i];
+    }
+    rtupdate0(&pkg2);
+
+    // Passsing packaget from 3
+    struct rtpkt pkg3;
+    pkg3.sourceid = 3;
+    pkg3.destid = 0;
+    int value3 [4] = {7,999,2,0};
+    for (i = 0; i < 4; i++)
+    {
+        pkg3.mincost[i] = value3[i];
+    }
+    rtupdate0(&pkg3);
+
+    // Get the resulting table and make sure it is right
+    struct distance_table result;
+    getTable(&result);
+
+    for (i = 0; i < 4; ++i)
+    {
+        for (j = 0; j < 4; ++j)
+        {
+            if (result.costs[i][j] != expectedResult[i][j])
+                CU_ASSERT(0);
+        }
+    }
+    int l = 0;
+}
+
 int main() {
     CU_pSuite pSuite = NULL;
 
@@ -143,7 +196,8 @@ int main() {
     /* Add the tests to the suite */
     if ((NULL == CU_add_test(pSuite, "testInit", testInit)  ||
         (NULL == CU_add_test(pSuite, "testOnePkg", testOnePkg)) ||
-        (NULL == CU_add_test(pSuite, "testTwoPkg", testOnePkg)))) {
+        (NULL == CU_add_test(pSuite, "testTwoPkg", testOnePkg)) ||
+        (NULL == CU_add_test(pSuite, "testAllInorderedPackages", testAllInorderedPackages)))) {
         CU_cleanup_registry();
         return CU_get_error();
     }
