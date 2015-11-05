@@ -124,6 +124,9 @@ StackSP                                         ; remaining memory space for sta
                   org         $3100             ; Program start address, in RAM
 pgstart           lds         #pgstart          ; initialize the stack pointer
                   
+                  ldx         #BaudMsg
+                  jsr         printmsg
+
                   clr         SCIBDH
                   ldaa        #13
                   staa        SCIBDL
@@ -153,7 +156,7 @@ pgstart_changeBD
                   std         MsgQueuePointer
 
 loop 
-                  jsr         UpdateDisplay          ; update display, each 1 second 
+                  jsr         UpdateDisplay     ; update display, each 1 second 
                   jsr         getchar           ; type writer - check the key board
                   cmpa        #$00              ;  if nothing typed, keep checking
                   beq         loop
@@ -179,10 +182,6 @@ loop
 *
 * Fuction:        this subroutine takes in the user's input in RegA and output the proper result
 *                 Below are restrictions that the function will impose
-*                       - Inputs must be positive decimal number
-*                       - Input must have a maximum of 3 digits
-*                       - Valid operators are: +,-,*, and /
-*                       - Only 2 operands and one operator are allow. Spaces may not be used                      
 *
 *
 * Parameters:     - RegA: this contains the user's input
@@ -194,8 +193,9 @@ loop
 OperateOnInput
                   pshx
                   pshd
-                  ; At this point, RegA contains the newest character
-                  ; If (RegA == CR)
+                  ; 
+                  ; Check if the input is CR
+                  ; Put it in the queue if it is not 
                   inc         MsgQueueCounter
                   cmpa        #13
                   lbne         OperateOnInput_NotEqualCR
@@ -208,6 +208,9 @@ OperateOnInput
 
                   **************************************
                   * Test whether or not the command is for the calculator or the clock
+
+                  ; If the first input is an 's' then we will do the rest in the clock function,
+                  ;		if not, do the calculator function
 
                   ldaa        x 
                   cmpa        #'s'
@@ -300,18 +303,6 @@ loadmin           ldaa        1,x+
                   jsr         nextLine
                   jsr         goBack
                   lbra        CNexit
-
-;clkquit           ldaa        1,x+             ; check if 'run' command
-                  ;cmpa        #CR              ;    'r' and 'un' with enter key CR.
-                  ;bne         CNerror
-                  ;sei                    ; it is 'stop' command, turn off interrupt
-         
-                  ;jsr         nextLine
-                  ;ldx         #msgexit
-                  ;jsr         printmsg
-                  ;jsr         nextLine
-                  ;jmp         typeWriter
-                  ;bra         CNexit
           
 CNerror          
                   jsr         nextLine
@@ -533,14 +524,6 @@ OperateOnInput_InvalidInput_QueueLoop
                   lbls         OperateOnInput_InvalidInput_QueueLoop
                   pulx
 
-                  ; Printing the OutputQueue
-                  ;ldx         #OutputQueue        
-                  ;jsr         printmsg
-                  ;ldaa        #CR 
-                  ;jsr         putchar
-                  ;ldaa        #LF 
-                  ;jsr         putchar
-
                   ; Check the flag to see what kind of error we have
                   brset       TypeOfErrorFlag,1,OperateOnInput_InvalidInput_Overflow
                   ; Print the InvalidFormat string
@@ -647,145 +630,145 @@ displayClk        psha
                   pshx
             
                   ; Save cursor position
-                  ldaa    #$1B         ; esc character
-                  jsr     putchar
-                  ldaa    #'['
-                  jsr     putchar
-                  ldaa    #'s'
-                  jsr     putchar
-            
+                  ldaa        #$1B         ; esc character
+                  jsr         putchar
+                  ldaa        #'['
+                  jsr         putchar
+                  ldaa        #'s'
+                  jsr         putchar
+                  
                   ; Move cursor to Spot
-                  ldaa    #$1B         ; esc character
-                  jsr     putchar
-                  ldaa    #'['
-                  jsr     putchar
-                  ldaa    #'1'
-                  jsr     putchar
-                  ldaa    #'2'
-                  jsr     putchar
-                  ldaa    #';'
-                  jsr     putchar
-                  ldaa    #'4'
-                  jsr     putchar
-                  ldaa    #'4'
-                  jsr     putchar
-                  ldaa    #'H'
-                  jsr     putchar
+                  ldaa        #$1B         ; esc character
+                  jsr         putchar
+                  ldaa        #'['
+                  jsr         putchar
+                  ldaa        #'1'
+                  jsr         putchar
+                  ldaa        #'2'
+                  jsr         putchar
+                  ldaa        #';'
+                  jsr         putchar
+                  ldaa        #'4'
+                  jsr         putchar
+                  ldaa         #'4'
+                  jsr         putchar
+                  ldaa         #'H'
+                  jsr         putchar
             
-                  ldd     time
-                  ldx     #10
+                  ldd         time
+                  ldx         #10
                   idiv    
-                  ldaa    #$30
+                  ldaa        #$30
                   aba
-                  jsr     putchar
+                  jsr         putchar
             
-                  cmpb    #0    
-                  lbne    clkQuit
+                  cmpb        #0    
+                  lbne        clkQuit
             
-                  ldaa    #$1B         ; esc character
-                  jsr     putchar
-                  ldaa    #'['
-                  jsr     putchar
-                  ldaa    #'2'         
-                  jsr     putchar
-                  ldaa    #'D'
-                  jsr     putchar
+                  ldaa        #$1B         ; esc character
+                  jsr         putchar
+                  ldaa        #'['
+                  jsr         putchar
+                  ldaa        #'2'         
+                  jsr         putchar
+                  ldaa        #'D'
+                  jsr         putchar
             
                   xgdx
-                  ldx     #6
+                  ldx         #6
                   idiv
-                  ldaa    #$30
+                  ldaa        #$30
                   aba
-                  jsr     putchar
-                  cmpb    #0    
-                  lbne    clkQuit
+                  jsr         putchar
+                  cmpb        #0    
+                  lbne        clkQuit
             
                   ; Move cursor back 3
-                  ldaa    #$1B         ; esc character
-                  jsr     putchar
-                  ldaa    #'['
-                  jsr     putchar
-                  ldaa    #'3'         
-                  jsr     putchar
-                  ldaa    #'D'
-                  jsr     putchar
+                  ldaa        #$1B         ; esc character
+                  jsr         putchar
+                  ldaa        #'['
+                  jsr         putchar
+                  ldaa        #'3'         
+                  jsr         putchar
+                  ldaa        #'D'
+                  jsr         putchar
             
                   xgdx
-                  ldx     #10
+                  ldx         #10
                   idiv
-                  ldaa    #$30
+                  ldaa        #$30
                   aba
-                  jsr     putchar
-                  ldaa    #':'
-                  jsr     putchar
+                  jsr         putchar
+                  ldaa        #':'
+                  jsr          putchar
             
-                  cmpb    #0    
-                  lbne    clkQuit
+                  cmpb         #0    
+                  lbne        clkQuit
             
                   ; Move cursor back 2
-                  ldaa    #$1B         ; esc character
-                  jsr     putchar
-                  ldaa    #'['
-                  jsr     putchar
-                  ldaa    #'3'         
-                  jsr     putchar
-                  ldaa    #'D'
-                  jsr     putchar
+                  ldaa        #$1B         ; esc character
+                  jsr         putchar
+                  ldaa        #'['
+                  jsr         putchar
+                  ldaa        #'3'         
+                  jsr         putchar
+                  ldaa        #'D'
+                  jsr         putchar
             
                   xgdx
-                  ldx     #6
+                  ldx         #6
                   idiv
-                  ldaa    #$30
+                  ldaa        #$30
                   aba
-                  jsr     putchar
-                  cmpb    #0    
-                  lbne    clkQuit
+                  jsr         putchar
+                  cmpb        #0    
+                  lbne        clkQuit
             
                   ; Move cursor back 3
-                  ldaa    #$1B         ; esc character
-                  jsr     putchar
-                  ldaa    #'['
-                  jsr     putchar
-                  ldaa    #'3'         
-                  jsr     putchar
-                  ldaa    #'D'
-                  jsr     putchar
+                  ldaa        #$1B         ; esc character
+                  jsr         putchar
+                  ldaa        #'['
+                  jsr         putchar
+                  ldaa        #'3'         
+                  jsr         putchar
+                  ldaa        #'D'
+                  jsr         putchar
             
                   xgdx
-                  ldx     #10
+                  ldx         #10
                   idiv
-                  ldaa    #$30
+                  ldaa        #$30
                   aba
-                  jsr     putchar
-                  ldaa    #':'
-                  jsr     putchar
-                  cmpb    #0    
-                  lbne    clkQuit
+                  jsr         putchar
+                  ldaa        #':'
+                  jsr         putchar
+                  cmpb        #0    
+                  lbne        clkQuit
             
                   ; Move cursor back 2
-                  ldaa  #$1B         ; esc character
-                  jsr   putchar
-                  ldaa  #'['
-                  jsr   putchar
-                  ldaa  #'3'         
-                  jsr   putchar
-                  ldaa  #'D'
-                  jsr   putchar
+                  ldaa        #$1B         ; esc character
+                  jsr         putchar
+                  ldaa        #'['
+                  jsr         putchar
+                  ldaa        #'3'         
+                  jsr         putchar
+                  ldaa        #'D'
+                  jsr         putchar
             
                   xgdx
-                  ldx     #2
+                  ldx         #2
                   idiv
-                  ldaa    #$30
+                  ldaa        #$30
                   aba
-                  jsr     putchar
+                  jsr         putchar
             
 clkQuit           ; Restore cursor position
-                  ldaa  #$1B         ; esc character
-                  jsr   putchar
-                  ldaa  #'['
-                  jsr   putchar
-                  ldaa  #'u'
-                  jsr   putchar
+                  ldaa        #$1B         ; esc character
+                  jsr         putchar
+                  ldaa        #'['
+                  jsr         putchar
+                  ldaa        #'u'
+                  jsr         putchar
             
                   ;jsr nextLine
 
@@ -808,97 +791,97 @@ display1stClk
                   pshx
             
                   ; Save cursor position
-                  ldaa    #$1B         ; esc character
-                  jsr     putchar
-                  ldaa    #'['
-                  jsr     putchar
-                  ldaa    #'s'
-                  jsr     putchar
+                  ldaa        #$1B         ; esc character
+                  jsr         putchar
+                  ldaa        #'['
+                  jsr         putchar
+                  ldaa         #'s'
+                  jsr         putchar
             
                   ; Move cursor to Spot
-                  ldaa    #$1B         ; esc character
-                  jsr     putchar
-                  ldaa    #'['
-                  jsr     putchar
-                  ldaa    #'1'
-                  jsr     putchar
-                  ldaa    #'2'
-                  jsr     putchar
-                  ldaa    #';'
-                  jsr     putchar
-                  ldaa    #'3'
-                  jsr     putchar
-                  ldaa    #'7'
-                  jsr     putchar
-                  ldaa    #'H'
-                  jsr     putchar
+                  ldaa         #$1B         ; esc character
+                  jsr         putchar
+                  ldaa        #'['
+                  jsr         putchar
+                  ldaa        #'1'
+                  jsr         putchar
+                  ldaa        #'2'
+                  jsr          putchar
+                  ldaa        #';'
+                  jsr         putchar
+                  ldaa        #'3'
+                  jsr         putchar
+                  ldaa        #'7'
+                  jsr         putchar
+                  ldaa        #'H'
+                  jsr         putchar
             
-                  ldd     time
-                  ldx     #10
+                  ldd         time
+                  ldx         #10
                   idiv    
-                  ldaa    #$30
+                  ldaa        #$30
                   aba
                   psha
             
                   xgdx
-                  ldx     #6
+                  ldx         #6
                   idiv
-                  ldaa    #$30
+                  ldaa        #$30
                   aba
                   psha
             
                   xgdx
-                  ldx     #10
+                  ldx         #10
                   idiv
-                  ldaa    #$30
+                  ldaa        #$30
                   aba
                   psha
             
                   xgdx
-                  ldx     #6
+                  ldx         #6
                   idiv
-                  ldaa    #$30
-                  aba
-                  psha
-
-                  xgdx
-                  ldx     #10
-                  idiv
-                  ldaa    #$30
+                  ldaa        #$30
                   aba
                   psha
 
                   xgdx
-                  ldx     #2
+                  ldx         #10
                   idiv
-                  ldaa    #$30
+                  ldaa        #$30
+                  aba
+                  psha
+
+                  xgdx
+                  ldx         #2
+                  idiv
+                  ldaa        #$30
                   aba
             
-                  jsr     putchar
+                  jsr         putchar
                   pula
-                  jsr     putchar
-                  ldaa    #':'
-                  jsr     putchar
+                  jsr         putchar
+                  ldaa        #':'
+                  jsr         putchar
             
                   pula
-                  jsr     putchar
-                  pula    
-                  jsr     putchar
-                  ldaa    #':'
-                  jsr     putchar
+                  jsr         putchar
+                  pula        
+                  jsr         putchar
+                  ldaa        #':'
+                  jsr          putchar
             
                   pula
-                  jsr     putchar
+                  jsr         putchar
                   pula    
-                  jsr     putchar
+                  jsr         putchar
             
                   ; Restore cursor position
-                  ldaa  #$1B         ; esc character
-                  jsr   putchar
-                  ldaa  #'['
-                  jsr   putchar
-                  ldaa  #'u'
-                  jsr   putchar
+                  ldaa        #$1B         ; esc character
+                  jsr         putchar
+                  ldaa        #'['
+                  jsr         putchar
+                  ldaa        #'u'
+                  jsr         putchar
             
                   pulx
                   pulb  
@@ -907,64 +890,34 @@ display1stClk
                   rts
 ;****************end of display1stClk****************
 
-;***************goBackHome**********************
+;***************goBack**********************
 goBack
                   psha
-                  ldaa  #$0d
-                  jsr   putchar
-                  ldaa  #$1B         ; esc character
-                  jsr   putchar
-                  ldaa  #'['
-                  jsr   putchar
-                  ldaa  #'1'         ; $38 in hex
-                  jsr   putchar
-                  ldaa  #'A'
-                  jsr   putchar
+                  ldaa        #$0d
+                  jsr         putchar
+                  ldaa        #$1B         ; esc character
+                  jsr         putchar
+                  ldaa        #'['
+                  jsr         putchar
+                  ldaa        #'1'         ; $38 in hex
+                  jsr         putchar
+                  ldaa        #'A'
+                  jsr         putchar
 
 
-                  ldaa  #$1B        ; Clear the line
-                  jsr   putchar
-                  ldaa  #'['
-                  jsr   putchar
-                  ldaa  #'2'
-                  jsr   putchar
-                  ldaa  #'K'
-                  jsr   putchar
+                  ldaa        #$1B        ; Clear the line
+                  jsr         putchar
+                  ldaa        #'['
+                  jsr         putchar
+                  ldaa        #'2'
+                  jsr         putchar
+                  ldaa        #'K'
+                  jsr         putchar
 
                   pula
                   rts 
-;***************Ending goBackHome**********************
+;***************Ending goBack**********************
 
-;***************goBackHome**********************
-goBackHome
-
-                  ldaa  #$1B         ; esc character
-                  jsr   putchar
-                  ldaa  #'['
-                  jsr   putchar
-                  ldaa  #'1'         ; $38 in hex
-                  jsr   putchar
-                  ldaa  #'A'
-                  jsr   putchar
-
-
-                  ldaa  #$1B        ; Clear the line
-                  jsr   putchar
-                  ldaa  #'['
-                  jsr   putchar
-                  ldaa  #'2'
-                  jsr   putchar
-                  ldaa  #'K'
-                  jsr   putchar
-
-           
-
-                  dec   lineCntr
-                  ldaa  lineCntr
-                  cmpa  #0
-                  bne   goBackHome
-                  rts 
-;***************Ending goBackHome**********************
 
 ;***************Update Display**********************
 ;* Program: Update count down timer display if 1 second is up
@@ -1528,12 +1481,11 @@ getchar_NoInput   ldaa        #0
 ; of the RAM.  RAM ends at $3FFF
 ; in MC9S12C128 chip
 
-MsgIntro1         dc.b        'Welcome! You are entering a program that will use the HC12 as a calculator.',CR,LF,'Operand inputs must be positive decimal numbers and have maximum of 3 digits limit.',CR,LF,NULL
-MsgIntro2         dc.b        'Leading zeros are valid inputs, but spaces are not allowable.',CR,LF,'The four valid operators are: +,-,*, and /',CR,LF,NULL
-MsgIntro3         dc.b        'Enjoy!.',CR,LF,NULL
+
 InvalidFormat     dc.b        '       Invalid input format',NULL
 Ecalc             dc.b        'Tcalc> ',NULL
 OverflowError     dc.b        '       Overflow error',NULL 
+BaudMsg           dc.b        'please change Hyper Terminal to 115.2K baud      ', NULL
 
 msg1              DC.B        'enter the s command in the following format "s hh:mm:ss to start the clock"', NULL
 msg2              DC.B        'calculator operators are +, -, *, and /', NULL
