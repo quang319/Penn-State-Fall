@@ -11,14 +11,17 @@ extern int TRACE;
 extern int YES;
 extern int NO;
 
-int connectcosts0[4] = { 0,  1,  3, 7 };
+static int connectcosts[4] = { 0,  1,  3, 7 };
+static int neighbors[3] = {1,2,3};
+static int node = 0;
 
 struct distance_table
 {
   int costs[4][4];
 } dt0;
 
-int node = 0;
+static void send2Neighbors();
+
 
 /* students to write the following two routines, and maybe some others */
 
@@ -32,7 +35,7 @@ void rtinit0()
     {
       if (i == 0)
       {
-        dt0.costs[i][j] = connectcosts0[j];
+        dt0.costs[i][j] = connectcosts[j];
       }
       else
       {
@@ -40,12 +43,19 @@ void rtinit0()
       }
     }
   }
+  // if (TRACE == 1)
+  //   printdt0(&dt0);
+
+  send2Neighbors();
     
 }
 
 
 void rtupdate0(struct rtpkt *rcvdpkt)
 {
+  
+  
+
   int i,j,k, changedFlg = 0;
 
   int source = rcvdpkt -> sourceid;
@@ -65,6 +75,13 @@ void rtupdate0(struct rtpkt *rcvdpkt)
       }
     }
   }
+
+  // inform all the neighbors if our mindist table has changed
+  if (changedFlg != 0)
+    send2Neighbors();
+
+  if (TRACE == 1)
+    printdt0(&dt0);
 
    
 }
@@ -98,4 +115,22 @@ void getTable(struct distance_table *result)
 {
   *result = dt0;
 } 
+
+static void send2Neighbors()
+{
+  struct rtpkt pktToSend[sizeof(neighbors)/4];
+  int i,j;
+
+  for (i = 0; i< (sizeof(neighbors)/4);i++ )
+  {
+    pktToSend[i].sourceid = node;
+    pktToSend[i].destid = neighbors[i];
+    for (j =0; j < 4; j++)
+    {
+      pktToSend[i].mincost[j] = dt0.costs[node][j];
+    }
+    tolayer2(pktToSend[i]);
+  }
+
+}
 

@@ -22,9 +22,42 @@ struct rtpkt {
   int destid;         /* id of router to which pkt being sent 
                          (must be an immediate neighbor) */
   int mincost[4];    /* min cost to node 0 ... 3 */
-  };
+  }packets[3];
+
+
+
+
 
 int init_suite(void) {
+
+    // Setting up packet 1
+    packets[0].sourceid = 1;
+    packets[0].destid = 0;
+    int value1 [4] = {1,0,1,999};
+    int i;
+    for (i = 0; i < 4; i++)
+    {
+        packets[0].mincost[i] = value1[i];
+    }
+
+    // Setting up packet 2
+    packets[1].sourceid = 2;
+    packets[1].destid = 0;
+    int value2 [4] = {3,1,0,2};
+    for (i = 0; i < 4; i++)
+    {
+        packets[1].mincost[i] = value2[i];
+    }
+
+    // Setting up packet 3
+    packets[2].sourceid = 3;
+    packets[2].destid = 0;
+    int value3 [4] = {7,999,2,0};
+    for (i = 0; i < 4; i++)
+    {
+        packets[2].mincost[i] = value3[i];
+    }
+
     return 0;
 }
 
@@ -59,16 +92,7 @@ void testOnePkg() {
     int i, j;
     rtinit0();
 
-    // Passsing packaget from 1
-    struct rtpkt pkg;
-    pkg.sourceid = 1;
-    pkg.destid = 0;
-    int value [4] = {1,0,1,999};
-    for (i = 0; i < 4; i++)
-    {
-        pkg.mincost[i] = value[i];
-    }
-    rtupdate0(&pkg);
+    rtupdate0(&packets[0]);
 
     // Get the resulting table and make sure it is right
     struct distance_table result;
@@ -89,27 +113,10 @@ void testTwoPkg() {
     int i, j;
     rtinit0();
 
-    // Passsing packaget from 1
-    struct rtpkt pkg1;
-    pkg1.sourceid = 1;
-    pkg1.destid = 0;
-    int value1 [4] = {1,0,1,999};
-    for (i = 0; i < 4; i++)
+    for (i = 0; i < 2; i++)
     {
-        pkg1.mincost[i] = value1[i];
+        rtupdate0(&packets[i]);
     }
-    rtupdate0(&pkg1);
-
-    // Passsing packaget from 2
-    struct rtpkt pkg2;
-    pkg2.sourceid = 2;
-    pkg2.destid = 0;
-    int value2 [4] = {3,1,0,2};
-    for (i = 0; i < 4; i++)
-    {
-        pkg2.mincost[i] = value2[i];
-    }
-    rtupdate0(&pkg2);
 
     // Get the resulting table and make sure it is right
     struct distance_table result;
@@ -130,38 +137,10 @@ void testAllInorderedPackages() {
     int i, j;
     rtinit0();
 
-    // Passsing packaget from 1
-    struct rtpkt pkg1;
-    pkg1.sourceid = 1;
-    pkg1.destid = 0;
-    int value1 [4] = {1,0,1,999};
-    for (i = 0; i < 4; i++)
+    for (i = 0; i < 3; i++)
     {
-        pkg1.mincost[i] = value1[i];
+        rtupdate0(&packets[i]);
     }
-    rtupdate0(&pkg1);
-
-    // Passsing packaget from 2
-    struct rtpkt pkg2;
-    pkg2.sourceid = 2;
-    pkg2.destid = 0;
-    int value2 [4] = {3,1,0,2};
-    for (i = 0; i < 4; i++)
-    {
-        pkg2.mincost[i] = value2[i];
-    }
-    rtupdate0(&pkg2);
-
-    // Passsing packaget from 3
-    struct rtpkt pkg3;
-    pkg3.sourceid = 3;
-    pkg3.destid = 0;
-    int value3 [4] = {7,999,2,0};
-    for (i = 0; i < 4; i++)
-    {
-        pkg3.mincost[i] = value3[i];
-    }
-    rtupdate0(&pkg3);
 
     // Get the resulting table and make sure it is right
     struct distance_table result;
@@ -176,6 +155,35 @@ void testAllInorderedPackages() {
         }
     }
     int l = 0;
+}
+
+void testAllPermutation() {
+    int permutation[6][3] = { {0,1,2}, {0,2,1}, {1,0,2}, {1,2,0}, {2,0,1}, {2,1,0}};
+    int expectedResult[4][4] = { {0,1,2,4}, {1,0,1,999}, {3,1,0,2}, {7,999,2,0}};
+    int i, j, k, l;
+    rtinit0();
+
+    for (k = 0; k < 6; k++)
+    {
+        for (l = 0; l < 3; l++)
+        {
+            int index = permutation[k][l];
+            rtupdate0(&packets[index]);
+        }
+
+        // Get the resulting table and make sure it is right
+        struct distance_table result;
+        getTable(&result);
+
+        for (i = 0; i < 4; ++i)
+        {
+            for (j = 0; j < 4; ++j)
+            {
+                if (result.costs[i][j] != expectedResult[i][j])
+                    CU_ASSERT(0);
+            }
+        }
+    } 
 }
 
 int main() {
@@ -197,7 +205,8 @@ int main() {
     if ((NULL == CU_add_test(pSuite, "testInit", testInit)  ||
         (NULL == CU_add_test(pSuite, "testOnePkg", testOnePkg)) ||
         (NULL == CU_add_test(pSuite, "testTwoPkg", testOnePkg)) ||
-        (NULL == CU_add_test(pSuite, "testAllInorderedPackages", testAllInorderedPackages)))) {
+        (NULL == CU_add_test(pSuite, "testAllInorderedPackages", testAllInorderedPackages)) ||
+        (NULL == CU_add_test(pSuite, "testAllPermutation", testAllPermutation)))) {
         CU_cleanup_registry();
         return CU_get_error();
     }

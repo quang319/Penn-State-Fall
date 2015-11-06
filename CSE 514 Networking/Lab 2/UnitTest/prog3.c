@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #define LINKCHANGES 1 
 /* ******************************************************************
@@ -68,69 +69,74 @@ struct event *evlist = NULL;   /* the event list */
 
 float clocktime = 0.000;
 
+void tolayer2(struct rtpkt packet);
+void init();
+float jimsrand();
+void insertevent(struct event *p);
+void printevlist();
 
-// main()
-// {
-//    struct event *eventptr;
+void main()
+{
+   struct event *eventptr;
    
-//    init();
+   init();
    
-//    while (1) {
+   while (1) {
      
-//         eventptr = evlist;            /* get next event to simulate */
-//         if (eventptr==NULL)
-//            goto terminate;
-//         evlist = evlist->next;        /* remove this event from event list */
-//         if (evlist!=NULL)
-//            evlist->prev=NULL;
-//         if (TRACE>1) {
-//           printf("MAIN: rcv event, t=%.3f, at %d",
-//                           eventptr->evtime,eventptr->eventity);
-//           if (eventptr->evtype == FROM_LAYER2 ) {
-// 	    printf(" src:%2d,",eventptr->rtpktptr->sourceid);
-//             printf(" dest:%2d,",eventptr->rtpktptr->destid);
-//             printf(" contents: %3d %3d %3d %3d\n", 
-//               eventptr->rtpktptr->mincost[0], eventptr->rtpktptr->mincost[1],
-//               eventptr->rtpktptr->mincost[2], eventptr->rtpktptr->mincost[3]);
-//             }
-//           }
-//         clocktime = eventptr->evtime;    /* update time to next event time */
-//         if (eventptr->evtype == FROM_LAYER2 ) {
-//             if (eventptr->eventity == 0) 
-// 	      rtupdate0(eventptr->rtpktptr);
-// 	     else if (eventptr->eventity == 1) 
-// 	      rtupdate1(eventptr->rtpktptr);
-// 	     else if (eventptr->eventity == 2) 
-// 	      rtupdate2(eventptr->rtpktptr);
-// 	     else if (eventptr->eventity == 3) 
-// 	      rtupdate3(eventptr->rtpktptr);
-//              else { printf("Panic: unknown event entity\n"); exit(0); }
-// 	  }
-//         else if (eventptr->evtype == LINK_CHANGE ) {
-//             if (clocktime<10001.0) {
-// 	      linkhandler0(1,20);
-// 	      linkhandler1(0,20);
-//               }
-// 	    else   {
-//     	      linkhandler0(1,1);
-// 	      linkhandler1(0,1);
-//               }
-// 	  }
-//           else
-//              { printf("Panic: unknown event type\n"); exit(0); }
-//         if (eventptr->evtype == FROM_LAYER2 ) 
-//           free(eventptr->rtpktptr);        /* free memory for packet, if any */
-//         free(eventptr);                    /* free memory for event struct   */
-//       }
+        eventptr = evlist;            /* get next event to simulate */
+        if (eventptr==NULL)
+           goto terminate;
+        evlist = evlist->next;        /* remove this event from event list */
+        if (evlist!=NULL)
+           evlist->prev=NULL;
+        if (TRACE>1) {
+          printf("MAIN: rcv event, t=%.3f, at %d",
+                          eventptr->evtime,eventptr->eventity);
+          if (eventptr->evtype == FROM_LAYER2 ) {
+	    printf(" src:%2d,",eventptr->rtpktptr->sourceid);
+            printf(" dest:%2d,",eventptr->rtpktptr->destid);
+            printf(" contents: %3d %3d %3d %3d\n", 
+              eventptr->rtpktptr->mincost[0], eventptr->rtpktptr->mincost[1],
+              eventptr->rtpktptr->mincost[2], eventptr->rtpktptr->mincost[3]);
+            }
+          }
+        clocktime = eventptr->evtime;    /* update time to next event time */
+        if (eventptr->evtype == FROM_LAYER2 ) {
+            if (eventptr->eventity == 0) 
+	      rtupdate0(eventptr->rtpktptr);
+	     else if (eventptr->eventity == 1) 
+	      rtupdate1(eventptr->rtpktptr);
+	     else if (eventptr->eventity == 2) 
+	      rtupdate2(eventptr->rtpktptr);
+	     else if (eventptr->eventity == 3) 
+	      rtupdate3(eventptr->rtpktptr);
+             else { printf("Panic: unknown event entity\n"); exit(0); }
+	  }
+        else if (eventptr->evtype == LINK_CHANGE ) {
+            if (clocktime<10001.0) {
+	      linkhandler0(1,20);
+	      linkhandler1(0,20);
+              }
+	    else   {
+    	      linkhandler0(1,1);
+	      linkhandler1(0,1);
+              }
+	  }
+          else
+             { printf("Panic: unknown event type\n"); exit(0); }
+        if (eventptr->evtype == FROM_LAYER2 ) 
+          free(eventptr->rtpktptr);        /* free memory for packet, if any */
+        free(eventptr);                    /* free memory for event struct   */
+      }
    
 
-// terminate:
-//    printf("\nSimulator terminated at t=%f, no packets in medium\n", clocktime);
-// }
+terminate:
+   printf("\nSimulator terminated at t=%f, no packets in medium\n", clocktime);
+}
 
 
 
-init()                         /* initialize the simulator */
+void init()                         /* initialize the simulator */
 {
   int i;
   float sum, avg;
@@ -193,8 +199,7 @@ float jimsrand()
 /*****************************************************/
  
 
-insertevent(p)
-   struct event *p;
+void insertevent(struct event *p)
 {
    struct event *q,*qold;
 
@@ -231,7 +236,7 @@ insertevent(p)
          }
 }
 
-printevlist()
+void printevlist()
 {
   struct event *q;
   printf("--------------\nEvent List Follows:\n");
@@ -243,9 +248,7 @@ printevlist()
 
 
 /************************** TOLAYER2 ***************/
-tolayer2(packet)
-  struct rtpkt packet;
-  
+void tolayer2(struct rtpkt packet)
 {
  struct rtpkt *mypktptr;
  struct event *evptr, *q;

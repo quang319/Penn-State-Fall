@@ -16,7 +16,6 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
-      <itemPath>main.c</itemPath>
       <itemPath>node0.c</itemPath>
       <itemPath>node1.c</itemPath>
       <itemPath>node2.c</itemPath>
@@ -32,6 +31,24 @@
                      projectFiles="true"
                      kind="TEST">
         <itemPath>tests/Test_Node0.c</itemPath>
+      </logicalFolder>
+      <logicalFolder name="f1"
+                     displayName="Test_Node1"
+                     projectFiles="true"
+                     kind="TEST">
+        <itemPath>tests/Test_Node1.c</itemPath>
+      </logicalFolder>
+      <logicalFolder name="f3"
+                     displayName="Test_Node2"
+                     projectFiles="true"
+                     kind="TEST">
+        <itemPath>tests/Test_Node2.c</itemPath>
+      </logicalFolder>
+      <logicalFolder name="f4"
+                     displayName="Test_Node3"
+                     projectFiles="true"
+                     kind="TEST">
+        <itemPath>tests/Test_Node3.c</itemPath>
       </logicalFolder>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
@@ -51,6 +68,14 @@
       </toolsSet>
       <compileType>
       </compileType>
+      <folder path="TestFiles/f1">
+        <linkerTool>
+          <output>${TESTDIR}/TestFiles/f1</output>
+          <linkerLibItems>
+            <linkerOptionItem>-lcunit</linkerOptionItem>
+          </linkerLibItems>
+        </linkerTool>
+      </folder>
       <folder path="TestFiles/f2">
         <linkerTool>
           <output>${TESTDIR}/TestFiles/f2</output>
@@ -59,8 +84,22 @@
           </linkerLibItems>
         </linkerTool>
       </folder>
-      <item path="main.c" ex="false" tool="0" flavor2="0">
-      </item>
+      <folder path="TestFiles/f3">
+        <linkerTool>
+          <output>${TESTDIR}/TestFiles/f3</output>
+          <linkerLibItems>
+            <linkerOptionItem>-lcunit</linkerOptionItem>
+          </linkerLibItems>
+        </linkerTool>
+      </folder>
+      <folder path="TestFiles/f4">
+        <linkerTool>
+          <output>${TESTDIR}/TestFiles/f4</output>
+          <linkerLibItems>
+            <linkerOptionItem>-lcunit</linkerOptionItem>
+          </linkerLibItems>
+        </linkerTool>
+      </folder>
       <item path="node0.c" ex="false" tool="0" flavor2="0">
       </item>
       <item path="node0.h" ex="false" tool="3" flavor2="0">
@@ -80,6 +119,12 @@
       <item path="prog3.c" ex="false" tool="0" flavor2="0">
       </item>
       <item path="tests/Test_Node0.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="tests/Test_Node1.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="tests/Test_Node2.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="tests/Test_Node3.c" ex="false" tool="0" flavor2="0">
       </item>
     </conf>
     <conf name="Release" type="1">
@@ -102,6 +147,14 @@
           <developmentMode>5</developmentMode>
         </asmTool>
       </compileType>
+      <folder path="TestFiles/f1">
+        <linkerTool>
+          <output>${TESTDIR}/TestFiles/f1</output>
+          <linkerLibItems>
+            <linkerOptionItem>-lcunit</linkerOptionItem>
+          </linkerLibItems>
+        </linkerTool>
+      </folder>
       <folder path="TestFiles/f2">
         <linkerTool>
           <output>${TESTDIR}/TestFiles/f2</output>
@@ -110,8 +163,22 @@
           </linkerLibItems>
         </linkerTool>
       </folder>
-      <item path="main.c" ex="false" tool="0" flavor2="0">
-      </item>
+      <folder path="TestFiles/f3">
+        <linkerTool>
+          <output>${TESTDIR}/TestFiles/f3</output>
+          <linkerLibItems>
+            <linkerOptionItem>-lcunit</linkerOptionItem>
+          </linkerLibItems>
+        </linkerTool>
+      </folder>
+      <folder path="TestFiles/f4">
+        <linkerTool>
+          <output>${TESTDIR}/TestFiles/f4</output>
+          <linkerLibItems>
+            <linkerOptionItem>-lcunit</linkerOptionItem>
+          </linkerLibItems>
+        </linkerTool>
+      </folder>
       <item path="node0.c" ex="false" tool="0" flavor2="0">
       </item>
       <item path="node0.h" ex="false" tool="3" flavor2="0">
@@ -131,6 +198,12 @@
       <item path="prog3.c" ex="false" tool="0" flavor2="0">
       </item>
       <item path="tests/Test_Node0.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="tests/Test_Node1.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="tests/Test_Node2.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="tests/Test_Node3.c" ex="false" tool="0" flavor2="0">
       </item>
     </conf>
   </confs>

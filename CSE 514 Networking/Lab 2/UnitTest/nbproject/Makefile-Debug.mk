@@ -35,7 +35,6 @@ OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 
 # Object Files
 OBJECTFILES= \
-	${OBJECTDIR}/main.o \
 	${OBJECTDIR}/node0.o \
 	${OBJECTDIR}/node1.o \
 	${OBJECTDIR}/node2.o \
@@ -47,11 +46,17 @@ TESTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}/tests
 
 # Test Files
 TESTFILES= \
-	${TESTDIR}/TestFiles/f2
+	${TESTDIR}/TestFiles/f2 \
+	${TESTDIR}/TestFiles/f1 \
+	${TESTDIR}/TestFiles/f3 \
+	${TESTDIR}/TestFiles/f4
 
 # Test Object Files
 TESTOBJECTFILES= \
-	${TESTDIR}/tests/Test_Node0.o
+	${TESTDIR}/tests/Test_Node0.o \
+	${TESTDIR}/tests/Test_Node1.o \
+	${TESTDIR}/tests/Test_Node2.o \
+	${TESTDIR}/tests/Test_Node3.o
 
 # C Compiler Flags
 CFLAGS=
@@ -76,11 +81,6 @@ LDLIBSOPTIONS=
 ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/unittest: ${OBJECTFILES}
 	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
 	${LINK.c} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/unittest ${OBJECTFILES} ${LDLIBSOPTIONS}
-
-${OBJECTDIR}/main.o: main.c 
-	${MKDIR} -p ${OBJECTDIR}
-	${RM} "$@.d"
-	$(COMPILE.c) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/main.o main.c
 
 ${OBJECTDIR}/node0.o: node0.c 
 	${MKDIR} -p ${OBJECTDIR}
@@ -118,6 +118,18 @@ ${TESTDIR}/TestFiles/f2: ${TESTDIR}/tests/Test_Node0.o ${OBJECTFILES:%.o=%_nomai
 	${MKDIR} -p ${TESTDIR}/TestFiles
 	${LINK.c}   -o ${TESTDIR}/TestFiles/f2 $^ ${LDLIBSOPTIONS} -lcunit 
 
+${TESTDIR}/TestFiles/f1: ${TESTDIR}/tests/Test_Node1.o ${OBJECTFILES:%.o=%_nomain.o}
+	${MKDIR} -p ${TESTDIR}/TestFiles
+	${LINK.c}   -o ${TESTDIR}/TestFiles/f1 $^ ${LDLIBSOPTIONS} -lcunit 
+
+${TESTDIR}/TestFiles/f3: ${TESTDIR}/tests/Test_Node2.o ${OBJECTFILES:%.o=%_nomain.o}
+	${MKDIR} -p ${TESTDIR}/TestFiles
+	${LINK.c}   -o ${TESTDIR}/TestFiles/f3 $^ ${LDLIBSOPTIONS} -lcunit 
+
+${TESTDIR}/TestFiles/f4: ${TESTDIR}/tests/Test_Node3.o ${OBJECTFILES:%.o=%_nomain.o}
+	${MKDIR} -p ${TESTDIR}/TestFiles
+	${LINK.c}   -o ${TESTDIR}/TestFiles/f4 $^ ${LDLIBSOPTIONS} -lcunit 
+
 
 ${TESTDIR}/tests/Test_Node0.o: tests/Test_Node0.c 
 	${MKDIR} -p ${TESTDIR}/tests
@@ -125,18 +137,23 @@ ${TESTDIR}/tests/Test_Node0.o: tests/Test_Node0.c
 	$(COMPILE.c) -g -MMD -MP -MF "$@.d" -o ${TESTDIR}/tests/Test_Node0.o tests/Test_Node0.c
 
 
-${OBJECTDIR}/main_nomain.o: ${OBJECTDIR}/main.o main.c 
-	${MKDIR} -p ${OBJECTDIR}
-	@NMOUTPUT=`${NM} ${OBJECTDIR}/main.o`; \
-	if (echo "$$NMOUTPUT" | ${GREP} '|main$$') || \
-	   (echo "$$NMOUTPUT" | ${GREP} 'T main$$') || \
-	   (echo "$$NMOUTPUT" | ${GREP} 'T _main$$'); \
-	then  \
-	    ${RM} "$@.d";\
-	    $(COMPILE.c) -g -Dmain=__nomain -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/main_nomain.o main.c;\
-	else  \
-	    ${CP} ${OBJECTDIR}/main.o ${OBJECTDIR}/main_nomain.o;\
-	fi
+${TESTDIR}/tests/Test_Node1.o: tests/Test_Node1.c 
+	${MKDIR} -p ${TESTDIR}/tests
+	${RM} "$@.d"
+	$(COMPILE.c) -g -MMD -MP -MF "$@.d" -o ${TESTDIR}/tests/Test_Node1.o tests/Test_Node1.c
+
+
+${TESTDIR}/tests/Test_Node2.o: tests/Test_Node2.c 
+	${MKDIR} -p ${TESTDIR}/tests
+	${RM} "$@.d"
+	$(COMPILE.c) -g -MMD -MP -MF "$@.d" -o ${TESTDIR}/tests/Test_Node2.o tests/Test_Node2.c
+
+
+${TESTDIR}/tests/Test_Node3.o: tests/Test_Node3.c 
+	${MKDIR} -p ${TESTDIR}/tests
+	${RM} "$@.d"
+	$(COMPILE.c) -g -MMD -MP -MF "$@.d" -o ${TESTDIR}/tests/Test_Node3.o tests/Test_Node3.c
+
 
 ${OBJECTDIR}/node0_nomain.o: ${OBJECTDIR}/node0.o node0.c 
 	${MKDIR} -p ${OBJECTDIR}
@@ -208,6 +225,9 @@ ${OBJECTDIR}/prog3_nomain.o: ${OBJECTDIR}/prog3.o prog3.c
 	@if [ "${TEST}" = "" ]; \
 	then  \
 	    ${TESTDIR}/TestFiles/f2 || true; \
+	    ${TESTDIR}/TestFiles/f1 || true; \
+	    ${TESTDIR}/TestFiles/f3 || true; \
+	    ${TESTDIR}/TestFiles/f4 || true; \
 	else  \
 	    ./${TEST} || true; \
 	fi
